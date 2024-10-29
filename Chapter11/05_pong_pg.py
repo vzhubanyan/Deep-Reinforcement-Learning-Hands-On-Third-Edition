@@ -81,7 +81,7 @@ if __name__ == "__main__":
         for step_idx, exp in enumerate(exp_source):
             baseline_buf.add(exp.reward)
             baseline = baseline_buf.mean()
-            batch_states.append(np.array(exp.state, copy=False))
+            batch_states.append(np.asarray(exp.state))
             batch_actions.append(int(exp.action))
             batch_scales.append(exp.reward - baseline)
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                 continue
 
             train_step_idx += 1
-            states_v = torch.as_tensor(np.array(batch_states, copy=False)).to(device)
+            states_v = torch.as_tensor(np.asarray(batch_states)).to(device)
             batch_actions_t = torch.as_tensor(batch_actions).to(device)
 
             scale_std = np.std(batch_scales)

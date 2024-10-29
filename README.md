@@ -143,23 +143,22 @@ To give you the exact versions of the external dependencies that we will use thr
 requirements.txt file (please not that it was tested on Python 3.11; different versions might require you to
 tweak the dependencies or not work at all):
 
-```
-[text]
+```[text]
 gymnasium[atari]==0.29.1
 gymnasium[classic-control]==0.29.1
 gymnasium[accept-rom-license]==0.29.1
 moviepy==1.0.3
-numpy==1.26.3
-opencv-python==4.9.0.80
-torch==2.3.1
-torchvision==0.18.1
-pytorch-ignite==0.4.13
-tensorboard==2.15.1
+numpy<2
+opencv-python==4.10.0.84
+torch==2.5.0
+torchvision==0.20.0
+pytorch-ignite==0.5.1
+tensorboard==2.18.0
 mypy==1.8.0
-ptan==0.8
-stable-baselines3==2.2.1
-torchrl==0.3.0
-ray[tune]==2.9.3
+ptan==0.8.1
+stable-baselines3==2.3.2
+torchrl==0.6.0
+ray[tune]==2.37.0
 pytest
 ```
 

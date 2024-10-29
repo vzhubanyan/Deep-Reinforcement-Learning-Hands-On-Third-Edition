@@ -20,7 +20,7 @@ if __name__ == "__main__":
         env = gym.wrappers.RecordVideo(env, video_folder=args.record)
 
     net = model.DDPGActor(env.observation_space.shape[0], env.action_space.shape[0])
-    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu'), weights_only=True))
 
     obs, _ = env.reset()
     total_reward = 0.0

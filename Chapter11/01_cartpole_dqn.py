@@ -77,8 +77,7 @@ if __name__ == "__main__":
                          for exp in batch]
         # train
         optimizer.zero_grad()
-        states_v = torch.as_tensor(
-            np.array(batch_states, copy=False))
+        states_v = torch.as_tensor(np.asarray(batch_states))
         net_q_v = net(states_v)
         target_q = net_q_v.data.numpy().copy()
         target_q[range(BATCH_SIZE), batch_actions] = batch_targets

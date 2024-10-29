@@ -18,8 +18,7 @@ TOKEN_UNK = "#unk"
 
 
 class Model(nn.Module):
-    def __init__(self, input_shape: tt.Tuple[int, ...],
-                 n_actions: int):
+    def __init__(self, input_shape: tt.Tuple[int, ...], n_actions: int):
         super(Model, self).__init__()
 
         self.conv = nn.Sequential(
@@ -33,16 +32,14 @@ class Model(nn.Module):
         self.policy = nn.Linear(size, n_actions)
         self.value = nn.Linear(size, 1)
 
-    def forward(self, x: torch.ByteTensor) -> \
-            tt.Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.ByteTensor) -> tt.Tuple[torch.Tensor, torch.Tensor]:
         xx = x / 255.0
         conv_out = self.conv(xx)
         return self.policy(conv_out), self.value(conv_out)
 
 
 class ModelMultimodal(nn.Module):
-    def __init__(self, input_shape: tt.Tuple[int, ...],
-                 n_actions: int,
+    def __init__(self, input_shape: tt.Tuple[int, ...], n_actions: int,
                  max_dict_size: int = MM_MAX_DICT_SIZE):
         super(ModelMultimodal, self).__init__()
 
@@ -56,35 +53,26 @@ class ModelMultimodal(nn.Module):
         size = self.conv(torch.zeros(1, *input_shape)).size()[-1]
 
         self.emb = nn.Embedding(max_dict_size, MM_EMBEDDINGS_DIM)
-        self.rnn = nn.LSTM(MM_EMBEDDINGS_DIM, MM_HIDDEN_SIZE,
-                           batch_first=True)
-
-        self.policy = nn.Linear(
-            size + MM_HIDDEN_SIZE*2, n_actions)
-        self.value = nn.Linear(
-            size + MM_HIDDEN_SIZE*2, 1)
+        self.rnn = nn.LSTM(MM_EMBEDDINGS_DIM, MM_HIDDEN_SIZE, batch_first=True)
+        self.policy = nn.Linear(size + MM_HIDDEN_SIZE*2, n_actions)
+        self.value = nn.Linear(size + MM_HIDDEN_SIZE*2, 1)
 
     def _concat_features(self, img_out: torch.Tensor,
-                         rnn_hidden: torch.Tensor |
-                                     tt.Tuple[torch.Tensor, ...]):
+                         rnn_hidden: torch.Tensor | tt.Tuple[torch.Tensor, ...]):
         batch_size = img_out.size()[0]
         if isinstance(rnn_hidden, tuple):
-            flat_h = list(map(lambda t: t.view(batch_size, -1),
-                              rnn_hidden))
+            flat_h = list(map(lambda t: t.view(batch_size, -1), rnn_hidden))
             rnn_h = torch.cat(flat_h, dim=1)
         else:
             rnn_h = rnn_hidden.view(batch_size, -1)
         return torch.cat((img_out, rnn_h), dim=1)
 
-    def forward(self, x: tt.Tuple[
-        torch.Tensor, rnn_utils.PackedSequence
-    ]):
+    def forward(self, x: tt.Tuple[torch.Tensor, rnn_utils.PackedSequence]):
         x_img, x_text = x
 
         # deal with text data
         emb_out = self.emb(x_text.data)
-        emb_out_seq = rnn_utils.PackedSequence(
-            emb_out, x_text.batch_sizes)
+        emb_out_seq = rnn_utils.PackedSequence(emb_out, x_text.batch_sizes)
         rnn_out, rnn_h = self.rnn(emb_out_seq)
 
         # extract image features
@@ -108,8 +96,7 @@ class MultimodalPreprocessor:
     def __len__(self):
         return len(self.token_to_id)
 
-    def __call__(self, batch: tt.Tuple[tt.Any, ...] |
-                              tt.List[tt.Tuple[tt.Any, ...]]):
+    def __call__(self, batch: tt.Tuple[tt.Any, ...] | tt.List[tt.Tuple[tt.Any, ...]]):
         """
         Convert list of multimodel observations (tuples with image and text string) into the form suitable
         for ModelMultimodal to disgest
@@ -132,20 +119,17 @@ class MultimodalPreprocessor:
 
         # convert data into the target form
         # images
-        img_v = torch.FloatTensor(
-            np.array(img_batch, copy=False)).to(self.device)
+        img_v = torch.FloatTensor(np.asarray(img_batch)).to(self.device)
         # sequences
-        seq_arr = np.zeros(shape=(len(seq_batch),
-                                  max(len(seq_batch[0]), 1)),
-                           dtype=np.int64)
+        seq_arr = np.zeros(
+            shape=(len(seq_batch), max(len(seq_batch[0]), 1)), dtype=np.int64)
         for idx, seq in enumerate(seq_batch):
             seq_arr[idx, :len(seq)] = seq
             # Map empty sequences into single #UNK token
             if len(seq) == 0:
                 lens[idx] = 1
         seq_v = torch.LongTensor(seq_arr).to(self.device)
-        seq_p = rnn_utils.pack_padded_sequence(
-            seq_v, lens, batch_first=True)
+        seq_p = rnn_utils.pack_padded_sequence(seq_v, lens, batch_first=True)
         return img_v, seq_p
 
     def tokens_to_idx(self, tokens):
@@ -154,9 +138,8 @@ class MultimodalPreprocessor:
             idx = self.token_to_id.get(token)
             if idx is None:
                 if self.next_id == self.max_dict_size:
-                    self.log.warning(
-                        "Maximum size of dict reached, token "
-                        "'%s' converted to #UNK token", token)
+                    self.log.warning("Maximum size of dict reached, token "
+                                     "'%s' converted to #UNK token", token)
                     idx = 0
                 else:
                     idx = self.next_id
@@ -185,8 +168,7 @@ class MultimodalPreprocessor:
 
 
 def train_demo(net: Model, optimizer: torch.optim.Optimizer,
-               batch: tt.List[ptan.experience.ExperienceFirstLast],
-               writer, step_idx: int,
+               batch: tt.List[ptan.experience.ExperienceFirstLast], writer, step_idx: int,
                preprocessor=ptan.agent.default_states_preprocessor,
                device: torch.device = torch.device("cpu")):
     """

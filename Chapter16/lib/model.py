@@ -72,8 +72,7 @@ class AgentA2C(ptan.agent.BaseAgent):
         self.net = net
         self.device = device
 
-    def __call__(self, states: ptan.agent.States,
-                 agent_states: ptan.agent.AgentStates):
+    def __call__(self, states: ptan.agent.States, agent_states: ptan.agent.AgentStates):
         states_v = ptan.agent.float32_preprocessor(states)
         states_v = states_v.to(self.device)
 

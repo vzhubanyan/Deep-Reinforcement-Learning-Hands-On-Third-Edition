@@ -33,8 +33,7 @@ class Net(nn.Module):
         return self.net(x)
 
 
-def train_step(net: Net, batch_noise: tt.List[common.TNoise],
-               batch_reward: tt.List[float],
+def train_step(net: Net, batch_noise: tt.List[common.TNoise], batch_reward: tt.List[float],
                writer: SummaryWriter, step_idx: int):
     weighted_noise = None
     norm_reward = np.array(batch_reward)
@@ -91,15 +90,11 @@ if __name__ == "__main__":
             print("Solved in %d steps" % step_idx)
             break
 
-        train_step(net, batch_noise, batch_reward,
-                   writer, step_idx)
+        train_step(net, batch_noise, batch_reward, writer, step_idx)
         writer.add_scalar("reward_mean", m_reward, step_idx)
-        writer.add_scalar("reward_std", np.std(batch_reward),
-                          step_idx)
-        writer.add_scalar("reward_max", np.max(batch_reward),
-                          step_idx)
-        writer.add_scalar("batch_episodes", len(batch_reward),
-                          step_idx)
+        writer.add_scalar("reward_std", np.std(batch_reward), step_idx)
+        writer.add_scalar("reward_max", np.max(batch_reward), step_idx)
+        writer.add_scalar("batch_episodes", len(batch_reward), step_idx)
         writer.add_scalar("batch_steps", batch_steps, step_idx)
         speed = batch_steps / (time.time() - t_start)
         writer.add_scalar("speed", speed, step_idx)

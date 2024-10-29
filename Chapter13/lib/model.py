@@ -13,8 +13,7 @@ from . import preproc
 
 
 class DQNModel(nn.Module):
-    def __init__(self, obs_size: int, cmd_size: int,
-                 hid_size: int = 256):
+    def __init__(self, obs_size: int, cmd_size: int, hid_size: int = 256):
         super(DQNModel, self).__init__()
 
         self.net = nn.Sequential(

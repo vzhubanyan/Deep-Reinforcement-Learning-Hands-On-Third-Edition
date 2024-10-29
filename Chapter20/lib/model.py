@@ -148,16 +148,11 @@ def state_lists_to_batch(state_lists, who_moves_lists, device="cpu"):
 #
 
 
-def play_game(
-        mcts_stores: tt.Optional[mcts.MCTS | tt.List[mcts.MCTS]],
-        replay_buffer: tt.Optional[collections.deque],
-        net1: Net, net2: Net,
-        steps_before_tau_0: int,
-        mcts_searches: int,
-        mcts_batch_size: int,
-        net1_plays_first: tt.Optional[bool] = None,
-        device: torch.device = torch.device("cpu"),
-):
+def play_game(mcts_stores: tt.Optional[mcts.MCTS | tt.List[mcts.MCTS]],
+              replay_buffer: tt.Optional[collections.deque], net1: Net, net2: Net,
+              steps_before_tau_0: int, mcts_searches: int, mcts_batch_size: int,
+              net1_plays_first: tt.Optional[bool] = None,
+              device: torch.device = torch.device("cpu")):
     """
     Play one single game, memorizing transitions into the replay buffer
     :param mcts_stores: could be None or single MCTS or two MCTSes for individual net
@@ -188,8 +183,7 @@ def play_game(
         mcts_stores[cur_player].search_batch(
             mcts_searches, mcts_batch_size, state,
             cur_player, nets[cur_player], device=device)
-        probs, _ = mcts_stores[cur_player].get_policy_value(
-            state, tau=tau)
+        probs, _ = mcts_stores[cur_player].get_policy_value(state, tau=tau)
         game_history.append((state, cur_player, probs))
         action = np.random.choice(game.GAME_COLS, p=probs)
         if action not in game.possible_moves(state):
@@ -211,9 +205,7 @@ def play_game(
 
     if replay_buffer is not None:
         for state, cur_player, probs in reversed(game_history):
-            replay_buffer.append(
-                (state, cur_player, probs, result)
-            )
+            replay_buffer.append((state, cur_player, probs, result))
             result = -result
 
     return net1_result, step

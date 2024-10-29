@@ -21,6 +21,7 @@ if __name__ == "__main__":
     parser.add_argument("--use-steps", action="store_true", default=False,
                         help="Use steps for comparison instead of time")
     parser.add_argument("--sma", type=int, default=None, help="Apply SMA with given window, default=disabled")
+    parser.add_argument("--line-width", default=0.8, help="Line width, default=0.8")
     args = parser.parse_args()
 
     data = []
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 
     for (hours, steps, vals), style in zip(data, ('-', ':', '--', '-.')):
         x = steps if args.use_steps else hours
-        ax1.plot(x, vals, color='black', linewidth=.8, linestyle=style)
+        ax1.plot(x, vals, color='black', linewidth=args.line_width, linestyle=style)
 
     def label_formatter(x, pos):
         v = int(x)

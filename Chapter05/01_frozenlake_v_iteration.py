@@ -20,15 +20,13 @@ class Agent:
         self.env = gym.make(ENV_NAME)
         self.state, _ = self.env.reset()
         self.rewards: tt.Dict[RewardKey, float] = defaultdict(float)
-        self.transits: tt.Dict[TransitKey, Counter] = \
-            defaultdict(Counter)
+        self.transits: tt.Dict[TransitKey, Counter] = defaultdict(Counter)
         self.values: tt.Dict[State, float] = defaultdict(float)
 
     def play_n_random_steps(self, n: int):
         for _ in range(n):
             action = self.env.action_space.sample()
-            new_state, reward, is_done, is_trunc, _ = \
-                self.env.step(action)
+            new_state, reward, is_done, is_trunc, _ = self.env.step(action)
             rw_key = (self.state, action, new_state)
             self.rewards[rw_key] = float(reward)
             tr_key = (self.state, action)
@@ -38,8 +36,7 @@ class Agent:
             else:
                 self.state = new_state
 
-    def calc_action_value(self, state: State, action: Action) \
-            -> float:
+    def calc_action_value(self, state: State, action: Action) -> float:
         target_counts = self.transits[(state, action)]
         total = sum(target_counts.values())
         action_value = 0.0
@@ -64,8 +61,7 @@ class Agent:
         state, _ = env.reset()
         while True:
             action = self.select_action(state)
-            new_state, reward, is_done, is_trunc, _ = \
-                env.step(action)
+            new_state, reward, is_done, is_trunc, _ = env.step(action)
             rw_key = (state, action, new_state)
             self.rewards[rw_key] = float(reward)
             tr_key = (state, action)
@@ -103,8 +99,7 @@ if __name__ == "__main__":
         reward /= TEST_EPISODES
         writer.add_scalar("reward", reward, iter_no)
         if reward > best_reward:
-            print(f"{iter_no}: Best reward updated "
-                  f"{best_reward:.3} -> {reward:.3}")
+            print(f"{iter_no}: Best reward updated {best_reward:.3} -> {reward:.3}")
             best_reward = reward
         if reward > 0.80:
             print("Solved in %d iterations!" % iter_no)

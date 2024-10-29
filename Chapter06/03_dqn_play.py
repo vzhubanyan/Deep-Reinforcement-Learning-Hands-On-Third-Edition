@@ -16,20 +16,16 @@ DEFAULT_ENV_NAME = "PongNoFrameskip-v4"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model", required=True,
-                        help="Model file to load")
+    parser.add_argument("-m", "--model", required=True, help="Model file to load")
     parser.add_argument("-e", "--env", default=DEFAULT_ENV_NAME,
-                        help="Environment name to use, default=" +
-                             DEFAULT_ENV_NAME)
-    parser.add_argument("-r", "--record", required=True,
-                        help="Directory for video")
+                        help="Environment name to use, default=" + DEFAULT_ENV_NAME)
+    parser.add_argument("-r", "--record", required=True, help="Directory for video")
     args = parser.parse_args()
 
     env = wrappers.make_env(args.env, render_mode="rgb_array")
     env = gym.wrappers.RecordVideo(env, video_folder=args.record)
-    net = dqn_model.DQN(env.observation_space.shape,
-                        env.action_space.n)
-    state = torch.load(args.model, map_location=lambda stg, _: stg)
+    net = dqn_model.DQN(env.observation_space.shape, env.action_space.n)
+    state = torch.load(args.model, map_location=lambda stg, _: stg, weights_only=True)
     net.load_state_dict(state)
 
     state, _ = env.reset()
@@ -37,7 +33,7 @@ if __name__ == "__main__":
     c: tt.Dict[int, int] = collections.Counter()
 
     while True:
-        state_v = torch.tensor([state])
+        state_v = torch.tensor(np.expand_dims(state, 0))
         q_vals = net(state_v).data.numpy()[0]
         action = int(np.argmax(q_vals))
         c[action] += 1

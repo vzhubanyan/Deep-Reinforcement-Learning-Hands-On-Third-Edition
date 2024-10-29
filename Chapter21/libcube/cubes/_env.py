@@ -50,10 +50,8 @@ class CubeEnv:
     # Utility functions
     def sample_action(self, prev_action=None):
         while True:
-            res = self.action_enum(random.randrange(
-                len(self.action_enum)))
-            if prev_action is None or \
-                    self.inverse_action(res) != prev_action:
+            res = self.action_enum(random.randrange(len(self.action_enum)))
+            if prev_action is None or self.inverse_action(res) != prev_action:
                 return res
 
     def scramble(self, actions):
@@ -65,8 +63,7 @@ class CubeEnv:
     def is_state(self, state):
         return isinstance(state, self._state_type)
 
-    def scramble_cube(self, scrambles_count, return_inverse=False,
-                      include_initial=False):
+    def scramble_cube(self, scrambles_count, return_inverse=False, include_initial=False):
         """
         Generate sequence of random cube scrambles
         :param scrambles_count: count of scrambles to perform

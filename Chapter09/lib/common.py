@@ -53,11 +53,11 @@ def unpack_batch(batch: tt.List[ExperienceFirstLast]):
         else:
             lstate = exp.last_state
         last_states.append(lstate)
-    return np.array(states, copy=False), \
+    return np.asarray(states), \
         np.array(actions), \
         np.array(rewards, dtype=np.float32), \
         np.array(dones, dtype=bool), \
-        np.array(last_states, copy=False)
+        np.asarray(last_states)
 
 
 def calc_loss_dqn(

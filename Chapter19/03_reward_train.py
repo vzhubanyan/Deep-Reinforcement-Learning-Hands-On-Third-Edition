@@ -51,12 +51,9 @@ class LabelsDataset(Dataset):
         return s1_obs, s1_acts, s2_obs, s2_acts, mu
 
 
-def calc_loss(
-        model: rlhf.RewardModel,
-        s1_obs: torch.ByteTensor, s1_acts: torch.Tensor,
-        s2_obs: torch.ByteTensor, s2_acts: torch.Tensor,
-        mu: torch.Tensor
-) -> torch.Tensor:
+def calc_loss(model: rlhf.RewardModel, s1_obs: torch.ByteTensor,
+              s1_acts: torch.Tensor, s2_obs: torch.ByteTensor,
+              s2_acts: torch.Tensor, mu: torch.Tensor) -> torch.Tensor:
     batch_size, steps = s1_obs.size()[:2]
 
     # combine batch and time sequence dimension into long batch

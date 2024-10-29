@@ -78,8 +78,7 @@ def train(params: common.Hyperparams,
     )
     buffer = ptan.experience.ExperienceReplayBuffer(
         exp_source, buffer_size=params.replay_size)
-    optimizer = optim.Adam(net.parameters(),
-                           lr=params.learning_rate)
+    optimizer = optim.Adam(net.parameters(), lr=params.learning_rate)
 
     def process_batch(engine, batch):
         optimizer.zero_grad()

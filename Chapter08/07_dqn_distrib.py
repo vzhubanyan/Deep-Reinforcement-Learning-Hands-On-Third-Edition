@@ -59,13 +59,10 @@ def save_state_images(
             path_prefix, batch_idx, game_idx))
 
 
-def calc_loss(
-        batch: tt.List[ExperienceFirstLast],
-        net: dqn_extra.DistributionalDQN,
-        tgt_net: dqn_extra.DistributionalDQN,
-        gamma: float, device: torch.device) -> torch.Tensor:
-    states, actions, rewards, dones, next_states = \
-        common.unpack_batch(batch)
+def calc_loss(batch: tt.List[ExperienceFirstLast], net: dqn_extra.DistributionalDQN,
+              tgt_net: dqn_extra.DistributionalDQN, gamma: float,
+              device: torch.device) -> torch.Tensor:
+    states, actions, rewards, dones, next_states = common.unpack_batch(batch)
     batch_size = len(batch)
 
     states_v = torch.as_tensor(states).to(device)
@@ -79,9 +76,7 @@ def calc_loss(
     next_distr = next_distr.data.cpu().numpy()
 
     next_best_distr = next_distr[range(batch_size), next_acts]
-
-    proj_distr = dqn_extra.distr_projection(
-        next_best_distr, rewards, dones, gamma)
+    proj_distr = dqn_extra.distr_projection(next_best_distr, rewards, dones, gamma)
 
     distr_v = net(states_v)
     sa_vals = distr_v[range(batch_size), actions_v.data]
@@ -125,8 +120,8 @@ def train(params: common.Hyperparams,
             eval_states = getattr(engine.state, "eval_states", None)
             if eval_states is None:
                 eval_states = buffer.sample(STATES_TO_EVALUATE)
-                eval_states = [np.array(transition.state, copy=False) for transition in eval_states]
-                engine.state.eval_states = np.array(eval_states, copy=False)
+                eval_states = [np.asarray(transition.state) for transition in eval_states]
+                engine.state.eval_states = np.asarray(eval_states)
 
             if engine.state.episode % EVAL_EVERY_GAME == 0:
                 engine.state.metrics["values"] = \

@@ -30,7 +30,7 @@ if __name__ == "__main__":
     env = gym.vector.AsyncVectorEnv(envs)
 
     net = model.Model(input_shape=wob.WOB_SHAPE, n_actions=env.single_action_space.n)
-    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu'), weights_only=True))
     out_dir = pathlib.Path(args.output)
     for i in range(N_ENVS):
         (out_dir / str(i)).mkdir(parents=True, exist_ok=True)

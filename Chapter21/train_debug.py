@@ -55,7 +55,7 @@ if __name__ == "__main__":
     cube_env = cubes.get(args.env)
     log.info("Selected cube: %s", cube_env)
     net = model.Net(cube_env.encoded_shape, len(cube_env.action_enum))
-    net.load_state_dict(torch.load(args.model, map_location=lambda storage, loc: storage))
+    net.load_state_dict(torch.load(args.model, map_location=lambda storage, loc: storage, weights_only=True))
     net.eval()
     log.info("Network loaded from %s", args.model)
 

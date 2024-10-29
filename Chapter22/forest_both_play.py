@@ -51,7 +51,7 @@ if __name__ == "__main__":
         env.observation_spaces['tiger_0'].shape,
         env.action_spaces['tiger_0'].n,
     )
-    tiger_net.load_state_dict(torch.load(args.model_tiger, map_location=torch.device('cpu')))
+    tiger_net.load_state_dict(torch.load(args.model_tiger, map_location=torch.device('cpu'), weights_only=True))
     tiger_agent = ptan.agent.DQNAgent(
         tiger_net, ptan.actions.ArgmaxActionSelector())
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         env.observation_spaces['deer_0'].shape,
         env.action_spaces['deer_0'].n,
     )
-    deer_net.load_state_dict(torch.load(args.model_deer, map_location=torch.device('cpu')))
+    deer_net.load_state_dict(torch.load(args.model_deer, map_location=torch.device('cpu'), weights_only=True))
     deer_agent = ptan.agent.DQNAgent(
         deer_net, ptan.actions.ArgmaxActionSelector())
 

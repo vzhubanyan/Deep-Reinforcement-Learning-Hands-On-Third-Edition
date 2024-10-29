@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     net = model.Model(input_shape=wob.WOB_SHAPE, n_actions=env.action_space.n)
     if args.model:
-        net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
+        net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu'), weights_only=True))
 
     steps_count = 0
     reward_sum = 0

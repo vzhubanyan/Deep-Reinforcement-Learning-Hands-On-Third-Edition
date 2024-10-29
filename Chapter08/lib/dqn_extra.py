@@ -71,8 +71,7 @@ class PrioReplayBuffer(ExperienceReplayBuffer):
         self.beta = BETA_START
 
     def update_beta(self, idx: int) -> float:
-        v = BETA_START + idx * (1.0 - BETA_START) / \
-            BETA_FRAMES
+        v = BETA_START + idx * (1.0 - BETA_START) / BETA_FRAMES
         self.beta = min(1.0, v)
         return self.beta
 
@@ -97,30 +96,24 @@ class PrioReplayBuffer(ExperienceReplayBuffer):
         probs = prios ** self.prob_alpha
         probs /= probs.sum()
 
-        indices = np.random.choice(len(self.buffer),
-                                   batch_size, p=probs)
+        indices = np.random.choice(len(self.buffer), batch_size, p=probs)
         samples = [self.buffer[idx] for idx in indices]
         total = len(self.buffer)
         weights = (total * probs[indices]) ** (-self.beta)
         weights /= weights.max()
-        return samples, indices, \
-               np.array(weights, dtype=np.float32)
+        return samples, indices, np.array(weights, dtype=np.float32)
 
-    def update_priorities(self, batch_indices: np.ndarray,
-                          batch_priorities: np.ndarray):
-        for idx, prio in zip(batch_indices,
-                             batch_priorities):
+    def update_priorities(self, batch_indices: np.ndarray, batch_priorities: np.ndarray):
+        for idx, prio in zip(batch_indices, batch_priorities):
             self.priorities[idx] = prio
 
 
 class DuelingDQN(nn.Module):
-    def __init__(self, input_shape: tt.Tuple[int, ...],
-                 n_actions: int):
+    def __init__(self, input_shape: tt.Tuple[int, ...], n_actions: int):
         super(DuelingDQN, self).__init__()
 
         self.conv = nn.Sequential(
-            nn.Conv2d(input_shape[0], 32,
-                      kernel_size=8, stride=4),
+            nn.Conv2d(input_shape[0], 32, kernel_size=8, stride=4),
             nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=4, stride=2),
             nn.ReLU(),
@@ -151,8 +144,7 @@ class DuelingDQN(nn.Module):
 
 
 class DistributionalDQN(nn.Module):
-    def __init__(self, input_shape: tt.Tuple[int, ...],
-                 n_actions: int):
+    def __init__(self, input_shape: tt.Tuple[int, ...], n_actions: int):
         super(DistributionalDQN, self).__init__()
 
         self.conv = nn.Sequential(
@@ -181,8 +173,7 @@ class DistributionalDQN(nn.Module):
         fc_out = self.fc(self.conv(xx))
         return fc_out.view(batch_size, -1, N_ATOMS)
 
-    def both(self, x: torch.ByteTensor) -> \
-            tt.Tuple[torch.Tensor, torch.Tensor]:
+    def both(self, x: torch.ByteTensor) -> tt.Tuple[torch.Tensor, torch.Tensor]:
         cat_out = self(x)
         probs = self.apply_softmax(cat_out)
         weights = probs * self.supports
@@ -196,19 +187,14 @@ class DistributionalDQN(nn.Module):
         return self.softmax(t.view(-1, N_ATOMS)).view(t.size())
 
 
-def distr_projection(
-        next_distr: np.ndarray,
-        rewards: np.ndarray,
-        dones: np.ndarray,
-        gamma: float
-):
+def distr_projection(next_distr: np.ndarray, rewards: np.ndarray,
+                     dones: np.ndarray, gamma: float):
     """
     Perform distribution projection aka Catergorical Algorithm from the
     "A Distributional Perspective on RL" paper
     """
     batch_size = len(rewards)
-    proj_distr = np.zeros((batch_size, N_ATOMS),
-                          dtype=np.float32)
+    proj_distr = np.zeros((batch_size, N_ATOMS), dtype=np.float32)
     delta_z = (Vmax - Vmin) / (N_ATOMS - 1)
     for atom in range(N_ATOMS):
         v = rewards + (Vmin + atom * delta_z) * gamma
@@ -217,17 +203,13 @@ def distr_projection(
         l = np.floor(b_j).astype(np.int64)
         u = np.ceil(b_j).astype(np.int64)
         eq_mask = u == l
-        proj_distr[eq_mask, l[eq_mask]] += \
-            next_distr[eq_mask, atom]
+        proj_distr[eq_mask, l[eq_mask]] += next_distr[eq_mask, atom]
         ne_mask = u != l
-        proj_distr[ne_mask, l[ne_mask]] += \
-            next_distr[ne_mask, atom] * (u - b_j)[ne_mask]
-        proj_distr[ne_mask, u[ne_mask]] += \
-            next_distr[ne_mask, atom] * (b_j - l)[ne_mask]
+        proj_distr[ne_mask, l[ne_mask]] += next_distr[ne_mask, atom] * (u - b_j)[ne_mask]
+        proj_distr[ne_mask, u[ne_mask]] += next_distr[ne_mask, atom] * (b_j - l)[ne_mask]
     if dones.any():
         proj_distr[dones] = 0.0
-        tz_j = np.minimum(
-            Vmax, np.maximum(Vmin, rewards[dones]))
+        tz_j = np.minimum(Vmax, np.maximum(Vmin, rewards[dones]))
         b_j = (tz_j - Vmin) / delta_z
         l = np.floor(b_j).astype(np.int64)
         u = np.ceil(b_j).astype(np.int64)
@@ -240,10 +222,8 @@ def distr_projection(
         ne_dones = dones.copy()
         ne_dones[dones] = ne_mask
         if ne_dones.any():
-            proj_distr[ne_dones, l[ne_mask]] = \
-                (u - b_j)[ne_mask]
-            proj_distr[ne_dones, u[ne_mask]] = \
-                (b_j - l)[ne_mask]
+            proj_distr[ne_dones, l[ne_mask]] = (u - b_j)[ne_mask]
+            proj_distr[ne_dones, u[ne_mask]] = (b_j - l)[ne_mask]
     return proj_distr
 
 

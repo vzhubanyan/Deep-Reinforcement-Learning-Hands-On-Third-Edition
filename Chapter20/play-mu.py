@@ -25,7 +25,7 @@ if __name__ == "__main__":
     nets = []
     for fname in args.models:
         net = mu.MuZeroModels(mu.OBS_SHAPE, game.GAME_COLS)
-        d = torch.load(fname, map_location=lambda storage, loc: storage)
+        d = torch.load(fname, map_location=lambda storage, loc: storage, weights_only=True)
         net.set_state_dict(d)
         net.to(device)
         nets.append((fname, net))

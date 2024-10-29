@@ -32,8 +32,7 @@ class PGN(nn.Module):
         return self.net(x)
 
 
-def smooth(old: tt.Optional[float], val: float,
-           alpha: float = 0.95) -> float:
+def smooth(old: tt.Optional[float], val: float, alpha: float = 0.95) -> float:
     if old is None:
         return val
     return old * alpha + (1-alpha)*val
@@ -90,8 +89,7 @@ if __name__ == "__main__":
         if len(batch_states) < BATCH_SIZE:
             continue
 
-        states_t = torch.as_tensor(
-            np.array(batch_states, copy=False))
+        states_t = torch.as_tensor(np.asarray(batch_states))
         batch_actions_t = torch.as_tensor(batch_actions)
         batch_scale_t = torch.as_tensor(batch_scales)
 
@@ -139,8 +137,7 @@ if __name__ == "__main__":
         writer.add_scalar("loss_entropy", l_entropy, step_idx)
         writer.add_scalar("loss_policy", l_policy, step_idx)
         writer.add_scalar("loss_total", l_total, step_idx)
-        writer.add_scalar("grad_l2", grad_means / grad_count,
-                          step_idx)
+        writer.add_scalar("grad_l2", grad_means / grad_count, step_idx)
         writer.add_scalar("grad_max", grad_max, step_idx)
         writer.add_scalar("batch_scales", bs_smoothed, step_idx)
 

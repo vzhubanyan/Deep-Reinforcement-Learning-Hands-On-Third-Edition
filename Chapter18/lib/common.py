@@ -22,7 +22,7 @@ SEED = 123
 def unpack_batch(batch: List[ptan.experience.ExperienceFirstLast]):
     states, actions, rewards, dones, last_states = [],[],[],[],[]
     for exp in batch:
-        state = np.array(exp.state, copy=False)
+        state = np.asarray(exp.state)
         states.append(state)
         actions.append(exp.action)
         rewards.append(exp.reward)
@@ -30,13 +30,13 @@ def unpack_batch(batch: List[ptan.experience.ExperienceFirstLast]):
         if exp.last_state is None:
             lstate = state  # the result will be masked anyway
         else:
-            lstate = np.array(exp.last_state, copy=False)
+            lstate = np.asarray(exp.last_state)
         last_states.append(lstate)
-    return np.array(states, copy=False, dtype=np.float32), \
+    return np.asarray(states, dtype=np.float32), \
            np.array(actions), \
            np.array(rewards, dtype=np.float32), \
            np.array(dones, dtype=bool), \
-           np.array(last_states, copy=False, dtype=np.float32)
+           np.asarray(last_states, dtype=np.float32)
 
 
 def calc_loss_dqn(
@@ -188,8 +188,7 @@ class PseudoCountRewardWrapper(gym.Wrapper):
     def step(self, action):
         obs, reward, done, is_tr, info = self.env.step(action)
         extra_reward = self._count_observation(obs)
-        return obs, reward + self.reward_scale * extra_reward, \
-               done, is_tr, info
+        return obs, reward + self.reward_scale * extra_reward, done, is_tr, info
 
     def _count_observation(self, obs) -> float:
         """

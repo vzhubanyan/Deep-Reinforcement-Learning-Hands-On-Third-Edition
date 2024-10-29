@@ -21,11 +21,8 @@ def sample_noise(
     return pos, neg
 
 
-def evaluate(
-        env: gym.Env, net: nn.Module,
-        get_max_action: bool = True,
-        device: torch.device = torch.device('cpu')
-) -> tt.Tuple[float, int]:
+def evaluate(env: gym.Env, net: nn.Module, get_max_action: bool = True,
+             device: torch.device = torch.device('cpu')) -> tt.Tuple[float, int]:
     obs, _ = env.reset()
     reward = 0.0
     steps = 0
@@ -44,11 +41,8 @@ def evaluate(
     return reward, steps
 
 
-def eval_with_noise(
-        env: gym.Env, net: nn.Module,
-        noise: TNoise, noise_std: float,
-        get_max_action: bool = True,
-        device: torch.device = torch.device("cpu")
+def eval_with_noise(env: gym.Env, net: nn.Module, noise: TNoise, noise_std: float,
+        get_max_action: bool = True, device: torch.device = torch.device("cpu")
 ) -> tt.Tuple[float, int]:
     old_params = net.state_dict()
     for p, p_n in zip(net.parameters(), noise):

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import time
+
 import numpy as np
 import gymnasium
 import miniwob
@@ -59,6 +61,8 @@ if __name__ == "__main__":
             "coords": np.array(coords, dtype=np.int8)
         }
         print("action", action)
+        if RENDER_ENV:
+            time.sleep(3)
         obs, reward, is_done, is_trunc, info = env.step(action)
         print(reward, is_done, info)
 
@@ -78,5 +82,7 @@ if __name__ == "__main__":
                         break
                 if is_done:
                     break
+        if RENDER_ENV:
+            input()
     finally:
         env.close()

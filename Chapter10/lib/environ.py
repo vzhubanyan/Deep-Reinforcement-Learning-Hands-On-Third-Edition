@@ -18,9 +18,8 @@ class Actions(enum.Enum):
 
 
 class State:
-    def __init__(self, bars_count: int, commission_perc: float,
-                 reset_on_close: bool, reward_on_close: bool = True,
-                 volumes: bool = True):
+    def __init__(self, bars_count: int, commission_perc: float, reset_on_close: bool,
+                 reward_on_close: bool = True, volumes: bool = True):
         assert bars_count > 0
         assert commission_perc >= 0.0
         self.bars_count = bars_count
@@ -156,41 +155,30 @@ class StocksEnv(gym.Env):
     ):
         self._prices = prices
         if state_1d:
-            self._state = State1D(
-                bars_count, commission, reset_on_close,
-                reward_on_close=reward_on_close, volumes=volumes)
+            self._state = State1D(bars_count, commission, reset_on_close,
+                                  reward_on_close=reward_on_close, volumes=volumes)
         else:
-            self._state = State(
-                bars_count, commission, reset_on_close,
-                reward_on_close=reward_on_close, volumes=volumes)
+            self._state = State(bars_count, commission, reset_on_close,
+                                reward_on_close=reward_on_close, volumes=volumes)
         self.action_space = spaces.Discrete(n=len(Actions))
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf,
-            shape=self._state.shape, dtype=np.float32)
+            low=-np.inf, high=np.inf, shape=self._state.shape, dtype=np.float32)
         self.random_ofs_on_reset = random_ofs_on_reset
 
-    def reset(
-        self,
-        *,
-        seed: int | None = None,
-        options: dict[str, tt.Any] | None = None,
-    ):
+    def reset(self, *, seed: int | None = None, options: dict[str, tt.Any] | None = None):
         # make selection of the instrument and it's offset. Then reset the state
         super().reset(seed=seed, options=options)
-        self._instrument = self.np_random.choice(
-            list(self._prices.keys()))
+        self._instrument = self.np_random.choice(list(self._prices.keys()))
         prices = self._prices[self._instrument]
         bars = self._state.bars_count
         if self.random_ofs_on_reset:
-            offset = self.np_random.choice(
-                prices.high.shape[0]-bars*10) + bars
+            offset = self.np_random.choice(prices.high.shape[0]-bars*10) + bars
         else:
             offset = bars
         self._state.reset(prices, offset)
         return self._state.encode(), {}
 
-    def step(self, action_idx: int) -> \
-            tt.Tuple[np.ndarray, float, bool, bool, dict]:
+    def step(self, action_idx: int) -> tt.Tuple[np.ndarray, float, bool, bool, dict]:
         action = Actions(action_idx)
         reward, done = self._state.step(action)
         obs = self._state.encode()

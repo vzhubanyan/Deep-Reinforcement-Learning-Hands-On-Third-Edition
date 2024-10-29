@@ -97,19 +97,14 @@ def unpack_batch(batch: tt.List[ExperienceFirstLast]):
         else:
             lstate = exp.last_state
         last_states.append(lstate)
-    return np.array(states, copy=False), \
-        np.array(actions), \
-        np.array(rewards, dtype=np.float32), \
-        np.array(dones, dtype=bool), \
-        np.array(last_states, copy=False)
+    return np.asarray(states), np.array(actions), np.array(rewards, dtype=np.float32), \
+        np.array(dones, dtype=bool), np.asarray(last_states)
 
 
 def calc_loss_dqn(
-        batch: tt.List[ExperienceFirstLast],
-        net: nn.Module, tgt_net: nn.Module,
+        batch: tt.List[ExperienceFirstLast], net: nn.Module, tgt_net: nn.Module,
         gamma: float, device: torch.device) -> torch.Tensor:
-    states, actions, rewards, dones, next_states = \
-        unpack_batch(batch)
+    states, actions, rewards, dones, next_states = unpack_batch(batch)
 
     states_v = torch.as_tensor(states).to(device)
     next_states_v = torch.as_tensor(next_states).to(device)
@@ -129,20 +124,17 @@ def calc_loss_dqn(
 
 
 class EpsilonTracker:
-    def __init__(self, selector: EpsilonGreedyActionSelector,
-                 params: Hyperparams):
+    def __init__(self, selector: EpsilonGreedyActionSelector, params: Hyperparams):
         self.selector = selector
         self.params = params
         self.frame(0)
 
     def frame(self, frame_idx: int):
-        eps = self.params.epsilon_start - \
-              frame_idx / self.params.epsilon_frames
+        eps = self.params.epsilon_start - frame_idx / self.params.epsilon_frames
         self.selector.epsilon = max(self.params.epsilon_final, eps)
 
 
-def batch_generator(buffer: ExperienceReplayBuffer,
-                    initial: int, batch_size: int) -> \
+def batch_generator(buffer: ExperienceReplayBuffer, initial: int, batch_size: int) -> \
         tt.Generator[tt.List[ExperienceFirstLast], None, None]:
     buffer.populate(initial)
     while True:
@@ -151,9 +143,7 @@ def batch_generator(buffer: ExperienceReplayBuffer,
 
 
 @torch.no_grad()
-def calc_values_of_states(
-        states: np.ndarray, net: nn.Module,
-        device: torch.device):
+def calc_values_of_states(states: np.ndarray, net: nn.Module, device: torch.device):
     mean_vals = []
     for batch in np.array_split(states, 64):
         states_v = torch.tensor(batch).to(device)
@@ -164,11 +154,9 @@ def calc_values_of_states(
 
 
 def setup_ignite(
-        engine: Engine, params: Hyperparams,
-        exp_source: ExperienceSourceFirstLast,
+        engine: Engine, params: Hyperparams, exp_source: ExperienceSourceFirstLast,
         run_name: str, extra_metrics: tt.Iterable[str] = (),
-        tuner_reward_episode: int = 100,
-        tuner_reward_min: float = -19,
+        tuner_reward_episode: int = 100, tuner_reward_min: float = -19,
 ):
     handler = ptan_ignite.EndOfEpisodeHandler(
         exp_source, bound_avg_reward=params.stop_reward)
@@ -178,33 +166,28 @@ def setup_ignite(
     @engine.on(ptan_ignite.EpisodeEvents.EPISODE_COMPLETED)
     def episode_completed(trainer: Engine):
         passed = trainer.state.metrics.get('time_passed', 0)
-        print("Episode %d: reward=%.0f, steps=%s, "
-              "speed=%.1f f/s, elapsed=%s" % (
+        print("Episode %d: reward=%.0f, steps=%s, speed=%.1f f/s, elapsed=%s" % (
             trainer.state.episode, trainer.state.episode_reward,
-            trainer.state.episode_steps,
-            trainer.state.metrics.get('avg_fps', 0),
+            trainer.state.episode_steps, trainer.state.metrics.get('avg_fps', 0),
             timedelta(seconds=int(passed))))
 
     @engine.on(ptan_ignite.EpisodeEvents.BOUND_REWARD_REACHED)
     def game_solved(trainer: Engine):
         passed = trainer.state.metrics['time_passed']
-        print("Game solved in %s, after %d episodes "
-              "and %d iterations!" % (
-            timedelta(seconds=int(passed)),
-            trainer.state.episode, trainer.state.iteration))
+        print("Game solved in %s, after %d episodes and %d iterations!" % (
+            timedelta(seconds=int(passed)), trainer.state.episode,
+            trainer.state.iteration))
         trainer.should_terminate = True
         trainer.state.solved = True
 
-    now = datetime.now().isoformat(timespec='minutes').\
-        replace(':', '')
+    now = datetime.now().isoformat(timespec='minutes').replace(':', '')
     logdir = f"runs/{now}-{params.run_name}-{run_name}"
     tb = tb_logger.TensorboardLogger(log_dir=logdir)
     run_avg = RunningAverage(output_transform=lambda v: v['loss'])
     run_avg.attach(engine, "avg_loss")
 
     metrics = ['reward', 'steps', 'avg_reward']
-    handler = tb_logger.OutputHandler(
-        tag="episodes", metric_names=metrics)
+    handler = tb_logger.OutputHandler(tag="episodes", metric_names=metrics)
     event = ptan_ignite.EpisodeEvents.EPISODE_COMPLETED
     tb.attach(engine, log_handler=handler, event_name=event)
 
@@ -212,9 +195,8 @@ def setup_ignite(
     ptan_ignite.PeriodicEvents().attach(engine)
     metrics = ['avg_loss', 'avg_fps']
     metrics.extend(extra_metrics)
-    handler = tb_logger.OutputHandler(
-        tag="train", metric_names=metrics,
-        output_transform=lambda a: a)
+    handler = tb_logger.OutputHandler(tag="train", metric_names=metrics,
+                                      output_transform=lambda a: a)
     event = ptan_ignite.PeriodEvents.ITERS_100_COMPLETED
     tb.attach(engine, log_handler=handler, event_name=event)
 
@@ -247,10 +229,8 @@ BASE_SPACE = {
 }
 
 def tune_params(
-        base_params: Hyperparams,
-        train_func: TrainFunc, device: torch.device,
-        samples: int = 10,
-        extra_space: tt.Optional[tt.Dict[str, tt.Any]] = None,
+        base_params: Hyperparams, train_func: TrainFunc, device: torch.device,
+        samples: int = 10, extra_space: tt.Optional[tt.Dict[str, tt.Any]] = None,
 ):
     """
     Perform hyperparameters tune.
@@ -274,16 +254,10 @@ def tune_params(
         res = train_func(params, device, config)
         return {"episodes": res if res is not None else 10**6}
 
-
     obj = tune.with_parameters(objective, device=device)
     if device.type == "cuda":
         obj = tune.with_resources(obj, {"gpu": 1})
-    tuner = tune.Tuner(
-        obj,
-        param_space=search_space,
-        tune_config=config,
-    )
-
+    tuner = tune.Tuner(obj, param_space=search_space, tune_config=config)
     results = tuner.fit()
     best = results.get_best_result(metric="episodes", mode="min")
     print(best.config)

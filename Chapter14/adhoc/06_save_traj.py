@@ -23,7 +23,7 @@ if __name__ == "__main__":
     env = wob.MiniWoBClickWrapper.create(ENV_NAME)
 
     net = model.Model(input_shape=wob.WOB_SHAPE, n_actions=env.action_space.n)
-    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu'), weights_only=True))
     out_dir = pathlib.Path(args.output)
     out_dir.mkdir(parents=True, exist_ok=True)
 

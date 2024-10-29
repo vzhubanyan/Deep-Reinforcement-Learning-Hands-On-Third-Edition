@@ -39,7 +39,7 @@ if __name__ == "__main__":
         print(env)
 
         net = common.AtariA2C(env.observation_space.shape, env.action_space.n)
-        net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
+        net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu'), weights_only=True))
 
         obs, _ = env.reset()
         total_reward = 0.0

@@ -96,7 +96,7 @@ if __name__ == "__main__":
         if batch_episodes < EPISODES_TO_TRAIN:
             continue
 
-        states_v = torch.as_tensor(np.array(batch_states, copy=False))
+        states_v = torch.as_tensor(np.asarray(batch_states))
         batch_actions_t = torch.as_tensor(batch_actions)
         batch_qvals_v = torch.as_tensor(batch_qvals)
 

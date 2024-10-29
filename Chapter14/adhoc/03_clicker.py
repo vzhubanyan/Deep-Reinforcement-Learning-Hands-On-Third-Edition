@@ -52,7 +52,7 @@ if __name__ == "__main__":
         else:
             is_done = False
             for action in range(env.action_space.n):
-                time.sleep(0.01)
+                time.sleep(0.001)
                 obs, reward, is_done, is_trunc, info = env.step(action)
                 info.pop(wob.MiniWoBClickWrapper.FULL_OBS_KEY)
                 print(action, "=>", reward, is_done, info)

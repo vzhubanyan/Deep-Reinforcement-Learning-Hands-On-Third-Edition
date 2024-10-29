@@ -145,26 +145,20 @@ if __name__ == "__main__":
                     continue
 
                 batch = buffer.sample(BATCH_SIZE)
-                states_v, actions_v, rewards_v, \
-                dones_mask, last_states_v = \
+                states_v, actions_v, rewards_v, dones_mask, last_states_v = \
                     common.unpack_batch_ddqn(batch, device)
 
                 # train critic
                 crt_opt.zero_grad()
                 crt_distr_v = crt_net(states_v, actions_v)
-                last_act_v = tgt_act_net.target_model(
-                    last_states_v)
+                last_act_v = tgt_act_net.target_model(last_states_v)
                 last_distr_v = F.softmax(
-                    tgt_crt_net.target_model(
-                        last_states_v, last_act_v), dim=1)
+                    tgt_crt_net.target_model(last_states_v, last_act_v), dim=1)
                 proj_distr = distr_projection(
-                    last_distr_v.detach().cpu().numpy(),
-                    rewards_v.detach().cpu().numpy(),
-                    dones_mask.detach().cpu().numpy(),
-                    gamma=GAMMA**REWARD_STEPS)
+                    last_distr_v.detach().cpu().numpy(), rewards_v.detach().cpu().numpy(),
+                    dones_mask.detach().cpu().numpy(), gamma=GAMMA**REWARD_STEPS)
                 proj_distr_v = torch.tensor(proj_distr).to(device)
-                prob_dist_v = -F.log_softmax(
-                    crt_distr_v, dim=1) * proj_distr_v
+                prob_dist_v = -F.log_softmax(crt_distr_v, dim=1) * proj_distr_v
                 critic_loss_v = prob_dist_v.sum(dim=1).mean()
                 critic_loss_v.backward()
                 crt_opt.step()
@@ -178,8 +172,7 @@ if __name__ == "__main__":
                 actor_loss_v = actor_loss_v.mean()
                 actor_loss_v.backward()
                 act_opt.step()
-                tb_tracker.track("loss_actor", actor_loss_v,
-                                 frame_idx)
+                tb_tracker.track("loss_actor", actor_loss_v, frame_idx)
 
                 tgt_act_net.alpha_sync(alpha=1 - 1e-3)
                 tgt_crt_net.alpha_sync(alpha=1 - 1e-3)
@@ -198,5 +191,4 @@ if __name__ == "__main__":
                             fname = os.path.join(save_path, name)
                             torch.save(act_net.state_dict(), fname)
                         best_reward = rewards
-
     pass

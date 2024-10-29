@@ -51,7 +51,8 @@ def mean_max_step(series: tt.List[Series]) -> float:
     return sum(map(lambda s: s.steps[-1], series)) / len(series)
 
 
-def avg_entries(entries: tt.Tuple[tt.Optional[tt.Tuple[float, int, float]], ...]) -> tt.Tuple[float, int, float]:
+def avg_entries(entries: tt.Tuple[tt.Optional[tt.Tuple[float, int, float]], ...],
+                do_sum: bool = False) -> tt.Tuple[float, int, float]:
     deltas = []
     steps = []
     values = []
@@ -62,10 +63,13 @@ def avg_entries(entries: tt.Tuple[tt.Optional[tt.Tuple[float, int, float]], ...]
         deltas.append(d)
         steps.append(s)
         values.append(v)
-    return sum(deltas) / len(deltas), int(sum(steps) / len(steps)), sum(values) / len(values)
+    if do_sum:
+        return sum(deltas), int(sum(steps)), sum(values)
+    else:
+        return sum(deltas) / len(deltas), int(sum(steps) / len(steps)), sum(values) / len(values)
 
 
-def average_series(series: tt.List[Series]) -> Series:
+def average_series(series: tt.List[Series], do_sum: bool = False) -> Series:
     mean_steps = mean_max_step(series)
     start_wall = series[0].start_wall
     deltas = []
@@ -73,7 +77,7 @@ def average_series(series: tt.List[Series]) -> Series:
     values = []
 
     for vals in itertools.zip_longest(*series):
-        dt, s, v = avg_entries(vals)
+        dt, s, v = avg_entries(vals, do_sum=do_sum)
         if s <= mean_steps:
             deltas.append(dt)
             steps.append(s)
@@ -84,9 +88,10 @@ def average_series(series: tt.List[Series]) -> Series:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--output", required=True, help="Output csv file to produce")
+    parser.add_argument("--sum", default=False, action="store_true", help="Perform summation instead of average")
     parser.add_argument("files", nargs='+', help="Input csv files")
     args = parser.parse_args()
 
     series = [Series.read(pathlib.Path(n)) for n in args.files]
-    res = average_series(series)
+    res = average_series(series, do_sum=args.sum)
     res.write(pathlib.Path(args.output))

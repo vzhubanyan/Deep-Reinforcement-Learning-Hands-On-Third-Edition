@@ -94,8 +94,8 @@ if __name__ == "__main__":
 
             traj_states = [t[0].state for t in trajectory]
             traj_actions = [t[0].action for t in trajectory]
-            traj_states_v = torch.FloatTensor(np.array(traj_states, copy=False)).to(device)
-            traj_actions_v = torch.FloatTensor(np.array(traj_actions, copy=False)).to(device)
+            traj_states_v = torch.FloatTensor(np.asarray(traj_states)).to(device)
+            traj_actions_v = torch.FloatTensor(np.asarray(traj_actions)).to(device)
             traj_adv_v, traj_ref_v = common.calc_adv_ref(
                 trajectory, net_crt, traj_states_v,
                 GAMMA, GAE_LAMBDA, device=device)
@@ -117,16 +117,14 @@ if __name__ == "__main__":
             # critic step
             opt_crt.zero_grad()
             value_v = net_crt(traj_states_v)
-            loss_value_v = F.mse_loss(
-                value_v.squeeze(-1), traj_ref_v)
+            loss_value_v = F.mse_loss(value_v.squeeze(-1), traj_ref_v)
             loss_value_v.backward()
             opt_crt.step()
 
             # actor step
             def get_loss():
                 mu_v = net_act(traj_states_v)
-                logprob_v = model.calc_logprob(
-                    mu_v, net_act.logstd, traj_actions_v)
+                logprob_v = model.calc_logprob(mu_v, net_act.logstd, traj_actions_v)
                 dp_v = torch.exp(logprob_v - old_logprob_v)
                 action_loss_v = -traj_adv_v.unsqueeze(dim=-1)*dp_v
                 return action_loss_v.mean()
@@ -138,8 +136,7 @@ if __name__ == "__main__":
                 logstd0_v = logstd_v.detach()
                 std_v = torch.exp(logstd_v)
                 std0_v = std_v.detach()
-                v = (std0_v ** 2 + (mu0_v - mu_v) ** 2) / \
-                    (2.0 * std_v ** 2)
+                v = (std0_v ** 2 + (mu0_v - mu_v) ** 2) / (2.0 * std_v ** 2)
                 kl = logstd_v - logstd0_v + v - 0.5
                 return kl.sum(1, keepdim=True)
 

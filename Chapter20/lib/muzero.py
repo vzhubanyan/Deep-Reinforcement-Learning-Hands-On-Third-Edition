@@ -68,11 +68,9 @@ class MCTSNode:
 
     @property
     def value(self) -> float:
-        return 0 if not self.visit_count else \
-            self.value_sum / self.visit_count
+        return 0 if not self.visit_count else self.value_sum / self.visit_count
 
-    def select_child(self, params: MuZeroParams,
-                     min_max: MinMaxStats) -> \
+    def select_child(self, params: MuZeroParams, min_max: MinMaxStats) -> \
             tt.Tuple[Action, "MCTSNode"]:
         max_ucb, best_action, best_node = None, None, None
         for action, node in self.children.items():
@@ -84,17 +82,13 @@ class MCTSNode:
         return best_action, best_node
 
     def get_act_probs(self, t: float = 1) -> tt.List[float]:
-        child_visits = sum(map(lambda n: n.visit_count,
-                               self.children.values()))
-        p = np.array([
-            (child.visit_count / child_visits) ** (1 / t)
-            for _, child in sorted(self.children.items())
-        ])
+        child_visits = sum(map(lambda n: n.visit_count, self.children.values()))
+        p = np.array([(child.visit_count / child_visits) ** (1 / t)
+                      for _, child in sorted(self.children.items())])
         p /= sum(p)
         return list(p)
 
-    def select_action(self, t: float,
-                      params: MuZeroParams) -> Action:
+    def select_action(self, t: float, params: MuZeroParams) -> Action:
         """
         Select action from visit counts using softmax with temperature.
         :param t: temperature to be used (from 0.00001 to inf)
@@ -105,8 +99,7 @@ class MCTSNode:
         if not act_vals:
             res = np.random.choice(params.actions_count)
         elif t < 0.0001:
-            res, _ = max(self.children.items(),
-                         key=lambda p: p[1].visit_count)
+            res, _ = max(self.children.items(), key=lambda p: p[1].visit_count)
         else:
             p = self.get_act_probs(t)
             res = int(np.random.choice(act_vals, p=p))
@@ -117,44 +110,36 @@ class ReprModel(nn.Module):
     """
     Representation model, maps observations into the hidden state
     """
-    def __init__(
-            self, input_shape: tt.Tuple[int, ...],
-    ):
+    def __init__(self, input_shape: tt.Tuple[int, ...]):
         super(ReprModel, self).__init__()
         self.conv_in = nn.Sequential(
-            nn.Conv2d(input_shape[0], NUM_FILTERS,
-                      kernel_size=3, padding=1),
+            nn.Conv2d(input_shape[0], NUM_FILTERS, kernel_size=3, padding=1),
             nn.BatchNorm2d(NUM_FILTERS),
             nn.LeakyReLU()
         )
         # layers with residual
         self.conv_1 = nn.Sequential(
-            nn.Conv2d(NUM_FILTERS, NUM_FILTERS,
-                      kernel_size=3, padding=1),
+            nn.Conv2d(NUM_FILTERS, NUM_FILTERS, kernel_size=3, padding=1),
             nn.BatchNorm2d(NUM_FILTERS),
             nn.LeakyReLU()
         )
         self.conv_2 = nn.Sequential(
-            nn.Conv2d(NUM_FILTERS, NUM_FILTERS,
-                      kernel_size=3, padding=1),
+            nn.Conv2d(NUM_FILTERS, NUM_FILTERS, kernel_size=3, padding=1),
             nn.BatchNorm2d(NUM_FILTERS),
             nn.LeakyReLU()
         )
         self.conv_3 = nn.Sequential(
-            nn.Conv2d(NUM_FILTERS, NUM_FILTERS,
-                      kernel_size=3, padding=1),
+            nn.Conv2d(NUM_FILTERS, NUM_FILTERS, kernel_size=3, padding=1),
             nn.BatchNorm2d(NUM_FILTERS),
             nn.LeakyReLU()
         )
         self.conv_4 = nn.Sequential(
-            nn.Conv2d(NUM_FILTERS, NUM_FILTERS,
-                      kernel_size=3, padding=1),
+            nn.Conv2d(NUM_FILTERS, NUM_FILTERS, kernel_size=3, padding=1),
             nn.BatchNorm2d(NUM_FILTERS),
             nn.LeakyReLU()
         )
         self.conv_5 = nn.Sequential(
-            nn.Conv2d(NUM_FILTERS, NUM_FILTERS,
-                      kernel_size=3, padding=1),
+            nn.Conv2d(NUM_FILTERS, NUM_FILTERS, kernel_size=3, padding=1),
             nn.BatchNorm2d(NUM_FILTERS),
             nn.LeakyReLU(),
         )
@@ -231,9 +216,8 @@ class DynamicsModel(nn.Module):
             nn.Linear(128, HIDDEN_STATE_SIZE),
         )
 
-    def forward(
-            self, h: torch.Tensor, a: torch.Tensor
-    ) -> tt.Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, h: torch.Tensor, a: torch.Tensor) -> \
+            tt.Tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass of dynamics model
         :param h: batch of hidden states
@@ -245,10 +229,7 @@ class DynamicsModel(nn.Module):
 
 
 class MuZeroModels:
-    def __init__(
-            self, input_shape: tt.Tuple[int, ...],
-            actions: int
-    ):
+    def __init__(self, input_shape: tt.Tuple[int, ...], actions: int):
         self.repr = ReprModel(input_shape)
         self.pred = PredModel(actions)
         self.dynamics = DynamicsModel(actions)
@@ -299,8 +280,7 @@ class Episode:
         self.root_values.append(node.value)
 
 
-def ucb_value(params: MuZeroParams,
-              parent: MCTSNode, child: MCTSNode,
+def ucb_value(params: MuZeroParams, parent: MCTSNode, child: MCTSNode,
               min_max: MinMaxStats) -> float:
     pb_c = m.log((parent.visit_count + params.pb_c_base + 1) /
                  params.pb_c_base) + params.pb_c_init
@@ -312,16 +292,11 @@ def ucb_value(params: MuZeroParams,
     return prior_score + value_score
 
 
-def make_expanded_root(
-        player_idx: int,
-        game_state_int: int,
-        params: MuZeroParams, models: MuZeroModels,
-        min_max: MinMaxStats,
-) -> MCTSNode:
+def make_expanded_root(player_idx: int, game_state_int: int, params: MuZeroParams,
+                       models: MuZeroModels, min_max: MinMaxStats) -> MCTSNode:
     root = MCTSNode(1.0, player_idx == 0)
     state_list = game.decode_binary(game_state_int)
-    state_t = state_lists_to_batch([state_list], [player_idx],
-                                   device=params.dev)
+    state_t = state_lists_to_batch([state_list], [player_idx], device=params.dev)
     h_t = models.repr(state_t)
     root.h = h_t[0].cpu().numpy()
 
@@ -331,9 +306,7 @@ def make_expanded_root(
     probs_t = p_t.squeeze(0) / p_t.sum()
     probs = probs_t.cpu().numpy()
     # add dirichlet noise
-    noises = np.random.dirichlet(
-        [params.dirichlet_alpha] * params.actions_count
-    )
+    noises = np.random.dirichlet([params.dirichlet_alpha] * params.actions_count)
     probs = probs * 0.75 + noises * 0.25
     for a, prob in enumerate(probs):
         root.children[a] = MCTSNode(prob, not root.first_plays)
@@ -344,10 +317,8 @@ def make_expanded_root(
 
 
 
-def expand_node(
-        parent: MCTSNode, node: MCTSNode, last_action: Action,
-        params: MuZeroParams, models: MuZeroModels,
-) -> float:
+def expand_node(parent: MCTSNode, node: MCTSNode, last_action: Action,
+                params: MuZeroParams, models: MuZeroModels) -> float:
     """
     Performs node expansion using models.
     Return predicted value for the node's state.
@@ -380,28 +351,21 @@ def expand_node(
     return float(v_t.cpu().item())
 
 
-def backpropagate(search_path: tt.List[MCTSNode], value: float,
-                  first_plays: bool, params: MuZeroParams,
-                  min_max: MinMaxStats):
+def backpropagate(search_path: tt.List[MCTSNode], value: float, first_plays: bool,
+                  params: MuZeroParams, min_max: MinMaxStats):
     for node in reversed(search_path):
-        node.value_sum += value if node.first_plays == first_plays \
-            else -value
+        node.value_sum += value if node.first_plays == first_plays else -value
         node.visit_count += 1
         value = node.r + params.discount * value
         min_max.update(value)
 
 
 @torch.no_grad()
-def run_mcts(
-        player_idx: int,
-        root_state_int: int,
-        params: MuZeroParams, models: MuZeroModels,
-        min_max: MinMaxStats,
-        search_rounds: int = 800,
-) -> MCTSNode:
+def run_mcts(player_idx: int, root_state_int: int, params: MuZeroParams,
+             models: MuZeroModels, min_max: MinMaxStats,
+             search_rounds: int = 800) -> MCTSNode:
     # prepare root node
-    root = make_expanded_root(player_idx, root_state_int,
-                              params, models, min_max)
+    root = make_expanded_root(player_idx, root_state_int, params, models, min_max)
     for _ in range(search_rounds):
         search_path = [root]
         parent_node = None
@@ -414,16 +378,14 @@ def run_mcts(
             node = new_node
             search_path.append(new_node)
         value = expand_node(parent_node, node, last_action, params, models)
-        backpropagate(search_path, value, node.first_plays,
-                      params, min_max)
+        backpropagate(search_path, value, node.first_plays, params, min_max)
     return root
 
 
 @torch.no_grad()
 def play_game(
-        player1: MuZeroModels, player2: MuZeroModels,
-        params: MuZeroParams, temperature: float,
-        init_state: tt.Optional[int] = None,
+        player1: MuZeroModels, player2: MuZeroModels, params: MuZeroParams,
+        temperature: float, init_state: tt.Optional[int] = None
 ) -> tt.Tuple[int, Episode]:
     episode = Episode()
     state = game.INITIAL_STATE if init_state is None else init_state
@@ -438,10 +400,7 @@ def play_game(
         if not possible_actions:
             break
 
-        root_node = run_mcts(
-            player_idx, state, params,
-            players[player_idx], min_max)
-
+        root_node = run_mcts(player_idx, state, params, players[player_idx], min_max)
         # run_mcts(node, action, params, players[player_idx])
         action = root_node.select_action(temperature, params)
 
@@ -465,11 +424,9 @@ def play_game(
 
 
 def sample_batch(
-        episode_buffer: tt.Deque[Episode], batch_size: int,
-        params: MuZeroParams,
+        episode_buffer: tt.Deque[Episode], batch_size: int, params: MuZeroParams,
 ) -> tt.Tuple[
-    torch.Tensor,
-    tt.Tuple[torch.Tensor, ...], tt.Tuple[torch.Tensor, ...],
+    torch.Tensor, tt.Tuple[torch.Tensor, ...], tt.Tuple[torch.Tensor, ...],
     tt.Tuple[torch.Tensor, ...], tt.Tuple[torch.Tensor, ...],
 ]:
     """
@@ -509,13 +466,10 @@ def sample_batch(
                 value *= params.discount
                 value += step.reward
             values[s].append(value)
-    states_t = state_lists_to_batch(
-        states, player_indices, device=params.dev)
+    states_t = state_lists_to_batch(states, player_indices, device=params.dev)
     res_actions = tuple(
-        torch.as_tensor(
-            np.eye(params.actions_count)[a],
-            dtype=torch.float32, device=params.dev
-        )
+        torch.as_tensor(np.eye(params.actions_count)[a],
+                        dtype=torch.float32, device=params.dev)
         for a in actions
     )
     res_policies = tuple(
@@ -530,5 +484,4 @@ def sample_batch(
         torch.as_tensor(v, dtype=torch.float32, device=params.dev)
         for v in values
     )
-    return states_t, res_actions, res_policies, \
-        res_rewards, res_values
+    return states_t, res_actions, res_policies, res_rewards, res_values

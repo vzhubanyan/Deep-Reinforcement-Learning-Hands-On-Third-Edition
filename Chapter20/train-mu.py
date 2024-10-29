@@ -79,8 +79,7 @@ if __name__ == "__main__":
     while True:
         step_idx += 1
         ts = time()
-        score, episode = mu.play_game(
-            best_net, best_net, params, temperature=temperature)
+        score, episode = mu.play_game(best_net, best_net, params, temperature=temperature)
         print(f"{step_idx}: result {score}, steps={len(episode)}")
         replay_buffer.append(episode)
         writer.add_scalar("time_play", time() - ts, step_idx)
@@ -89,8 +88,7 @@ if __name__ == "__main__":
         # training
         ts = time()
         for _ in range(TRAIN_ROUNDS):
-            states_t, actions, policy_tgt, \
-                rewards_tgt, values_tgt = \
+            states_t, actions, policy_tgt, rewards_tgt, values_tgt = \
                 mu.sample_batch(replay_buffer, BATCH_SIZE, params)
 
             optimizer.zero_grad()
@@ -100,8 +98,7 @@ if __name__ == "__main__":
             loss_r_full_t = None
             for step in range(params.unroll_steps):
                 policy_t, values_t = net.pred(h_t)
-                loss_p_t = F.cross_entropy(policy_t,
-                                           policy_tgt[step])
+                loss_p_t = F.cross_entropy(policy_t, policy_tgt[step])
                 loss_v_t = F.mse_loss(values_t, values_tgt[step])
                 # dynamic step
                 rewards_t, h_t = net.dynamics(h_t, actions[step])

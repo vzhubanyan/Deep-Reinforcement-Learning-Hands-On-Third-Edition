@@ -25,16 +25,12 @@ class TextWorldPreproc(gym.Wrapper):
     OBS_FIELD = "obs"
 
     def __init__(
-            self, env: gym.Env,
-            vocab_rev: tt.Optional[tt.Dict[str, int]],
+            self, env: gym.Env, vocab_rev: tt.Optional[tt.Dict[str, int]],
             encode_raw_text: bool = False,
-            encode_extra_fields: tt.Iterable[str] = (
-                 'description', 'inventory'),
+            encode_extra_fields: tt.Iterable[str] = ('description', 'inventory'),
             copy_extra_fields: tt.Iterable[str] = (),
-            use_admissible_commands: bool = True,
-            keep_admissible_commands: bool = False,
-            use_intermediate_reward: bool = True,
-            tokens_limit: tt.Optional[int] = None,
+            use_admissible_commands: bool = True, keep_admissible_commands: bool = False,
+            use_intermediate_reward: bool = True, tokens_limit: tt.Optional[int] = None,
             reward_wrong_last_command: tt.Optional[float] = None
     ):
         """
@@ -57,8 +53,7 @@ class TextWorldPreproc(gym.Wrapper):
         self._use_admissible_commands = use_admissible_commands
         self._keep_admissible_commands = keep_admissible_commands
         self._use_intermedate_reward = use_intermediate_reward
-        self._num_fields = len(self._encode_extra_field) + \
-                           int(self._encode_raw_text)
+        self._num_fields = len(self._encode_extra_field) + int(self._encode_raw_text)
         self._last_admissible_commands = None
         self._last_extra_info = None
         self._tokens_limit = tokens_limit
@@ -92,11 +87,9 @@ class TextWorldPreproc(gym.Wrapper):
         result = {self.OBS_FIELD: obs_result}
         if self._use_admissible_commands:
             result[KEY_ADM_COMMANDS] = [
-                self._maybe_tokenize(cmd)
-                for cmd in extra_info[KEY_ADM_COMMANDS]
+                self._maybe_tokenize(cmd) for cmd in extra_info[KEY_ADM_COMMANDS]
             ]
-            self._last_admissible_commands = \
-                extra_info[KEY_ADM_COMMANDS]
+            self._last_admissible_commands = extra_info[KEY_ADM_COMMANDS]
         if self._keep_admissible_commands:
             result[KEY_ADM_COMMANDS] = extra_info[KEY_ADM_COMMANDS]
             if 'policy_commands' in extra_info:
@@ -284,10 +277,7 @@ class Encoder(nn.Module):
     """
     def __init__(self, emb_size: int, out_size: int):
         super(Encoder, self).__init__()
-
-        self.net = nn.LSTM(
-            input_size=emb_size, hidden_size=out_size,
-            batch_first=True)
+        self.net = nn.LSTM(input_size=emb_size, hidden_size=out_size, batch_first=True)
 
     def forward(self, x):
         self.net.flatten_parameters()
@@ -302,9 +292,8 @@ class Preprocessor(nn.Module):
     Takes batch of several input sequences and outputs their
     summary from one or many encoders
     """
-    def __init__(self, dict_size: int, emb_size: int,
-                 num_sequences: int, enc_output_size: int,
-                 extra_flags: tt.Sequence[str] = ()):
+    def __init__(self, dict_size: int, emb_size: int, num_sequences: int,
+                 enc_output_size: int, extra_flags: tt.Sequence[str] = ()):
         """
         :param dict_size: amount of words is our vocabulary
         :param emb_size: dimensionality of embeddings
@@ -316,8 +305,7 @@ class Preprocessor(nn.Module):
         super(Preprocessor, self).__init__()
         self._extra_flags = extra_flags
         self._enc_output_size = enc_output_size
-        self.emb = nn.Embedding(num_embeddings=dict_size,
-                                embedding_dim=emb_size)
+        self.emb = nn.Embedding(num_embeddings=dict_size, embedding_dim=emb_size)
         self.encoders = []
         for idx in range(num_sequences):
             enc = Encoder(emb_size, enc_output_size)
@@ -334,28 +322,18 @@ class Preprocessor(nn.Module):
     def cmd_enc_size(self):
         return self._enc_output_size
 
-    def _apply_encoder(self, batch: tt.List[tt.List[int]],
-                       encoder: Encoder):
+    def _apply_encoder(self, batch: tt.List[tt.List[int]], encoder: Encoder):
         dev = self.emb.weight.device
-        batch_t = [self.emb(torch.tensor(sample).to(dev))
-                   for sample in batch]
-        batch_seq = rnn_utils.pack_sequence(
-            batch_t, enforce_sorted=False)
+        batch_t = [self.emb(torch.tensor(sample).to(dev)) for sample in batch]
+        batch_seq = rnn_utils.pack_sequence(batch_t, enforce_sorted=False)
         return encoder(batch_seq)
 
-    def encode_observations(self, observations: tt.List[dict]) -> \
-            torch.Tensor:
-        sequences = [
-            obs[TextWorldPreproc.OBS_FIELD]
-            for obs in observations
-        ]
+    def encode_observations(self, observations: tt.List[dict]) -> torch.Tensor:
+        sequences = [obs[TextWorldPreproc.OBS_FIELD] for obs in observations ]
         res_t = self.encode_sequences(sequences)
         if not self._extra_flags:
             return res_t
-        extra = [
-            [obs[field] for field in self._extra_flags]
-            for obs in observations
-        ]
+        extra = [[obs[field] for field in self._extra_flags] for obs in observations]
         extra_t = torch.Tensor(extra).to(res_t.device)
         res_t = torch.cat([res_t, extra_t], dim=1)
         return res_t

@@ -37,12 +37,9 @@ def play_game(env, max_steps: int = 20) -> bool:
         
         What's the next command?
         """) % (obs, info['description']))
+        print("=== Send this to chat.openai.com and type the reply...")
 
-        print("=== Send this to chat.openai.com and "
-              "type the reply...")
-
-    print(f"Wasn't able to solve after {max_steps} steps, "
-          f"commands: {commands}")
+    print(f"Wasn't able to solve after {max_steps} steps, commands: {commands}")
     return False
 
 
@@ -57,10 +54,7 @@ if __name__ == "__main__":
     for index in args.indices:
         env_id = register_game(
             gamefile=f"games/{args.game}{index}.ulx",
-            request_infos=EnvInfos(
-                description=True,
-                objective=True,
-            ),
+            request_infos=EnvInfos(description=True, objective=True),
         )
         env = gym.make(env_id)
         count_games += 1

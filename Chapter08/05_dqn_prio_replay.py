@@ -34,13 +34,10 @@ BEST_PONG = common.Hyperparams(
 )
 
 
-def calc_loss(
-        batch: tt.List[ExperienceFirstLast],
-        batch_weights: np.ndarray, net: nn.Module,
-        tgt_net: nn.Module, gamma: float,
-        device: torch.device) -> tt.Tuple[torch.Tensor, np.ndarray]:
-    states, actions, rewards, dones, next_states = \
-        common.unpack_batch(batch)
+def calc_loss(batch: tt.List[ExperienceFirstLast], batch_weights: np.ndarray,
+              net: nn.Module, tgt_net: nn.Module, gamma: float,
+              device: torch.device) -> tt.Tuple[torch.Tensor, np.ndarray]:
+    states, actions, rewards, dones, next_states = common.unpack_batch(batch)
 
     states_v = torch.as_tensor(states).to(device)
     actions_v = torch.tensor(actions).to(device)
@@ -58,8 +55,7 @@ def calc_loss(
         exp_sa_vals = next_s_vals.detach() * gamma + rewards_v
     l = (state_action_vals - exp_sa_vals) ** 2
     losses_v = batch_weights_v * l
-    return losses_v.mean(), \
-           (losses_v + 1e-5).data.cpu().numpy()
+    return losses_v.mean(), (losses_v + 1e-5).data.cpu().numpy()
 
 
 def train(params: common.Hyperparams,
@@ -79,8 +75,7 @@ def train(params: common.Hyperparams,
 
     exp_source = ptan.experience.ExperienceSourceFirstLast(
         env, agent, gamma=params.gamma, env_seed=common.SEED)
-    buffer = dqn_extra.PrioReplayBuffer(
-        exp_source, params.replay_size, alpha)
+    buffer = dqn_extra.PrioReplayBuffer(exp_source, params.replay_size, alpha)
     optimizer = optim.Adam(net.parameters(),
                            lr=params.learning_rate)
 

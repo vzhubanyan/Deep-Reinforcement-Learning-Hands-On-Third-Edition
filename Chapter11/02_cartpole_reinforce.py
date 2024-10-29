@@ -48,8 +48,7 @@ if __name__ == "__main__":
     print(net)
 
     agent = ptan.agent.PolicyAgent(
-        net, preprocessor=ptan.agent.float32_preprocessor,
-        apply_softmax=True)
+        net, preprocessor=ptan.agent.float32_preprocessor, apply_softmax=True)
     exp_source = ExperienceSourceFirstLast(env, agent, gamma=GAMMA)
 
     optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
@@ -78,27 +77,22 @@ if __name__ == "__main__":
             reward = new_rewards[0]
             total_rewards.append(reward)
             mean_rewards = float(np.mean(total_rewards[-100:]))
-            print(f"{step_idx}: reward: {reward:6.2f}, "
-                  f"mean_100: {mean_rewards:6.2f}, "
+            print(f"{step_idx}: reward: {reward:6.2f}, mean_100: {mean_rewards:6.2f}, "
                   f"episodes: {done_episodes}")
             writer.add_scalar("reward", reward, step_idx)
             writer.add_scalar("reward_100", mean_rewards, step_idx)
             writer.add_scalar("episodes", done_episodes, step_idx)
             if mean_rewards > 450:
-                print(f"Solved in {step_idx} steps and "
-                      f"{done_episodes} episodes!")
+                print(f"Solved in {step_idx} steps and {done_episodes} episodes!")
                 break
 
         if batch_episodes < EPISODES_TO_TRAIN:
             continue
 
         optimizer.zero_grad()
-        states_t = torch.as_tensor(
-            np.array(batch_states, copy=False))
-        batch_actions_t = torch.as_tensor(
-            np.array(batch_actions, copy=False))
-        batch_qvals_t = torch.as_tensor(
-            np.array(batch_qvals, copy=False))
+        states_t = torch.as_tensor(np.asarray(batch_states))
+        batch_actions_t = torch.as_tensor(np.asarray(batch_actions))
+        batch_qvals_t = torch.as_tensor(np.asarray(batch_qvals))
 
         logits_t = net(states_t)
         log_prob_t = F.log_softmax(logits_t, dim=1)

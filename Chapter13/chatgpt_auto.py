@@ -4,15 +4,13 @@ from textworld import gym, EnvInfos
 from textworld.gym import register_game
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate, \
-    MessagesPlaceholder
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 
 def play_game(env, max_steps: int = 20) -> bool:
     prompt_init = ChatPromptTemplate.from_messages([
         ("system", "You're playing the interactive fiction game. "
-                   "Reply with just a command in lowercase and "
-                   "nothing else"),
+                   "Reply with just a command in lowercase and nothing else"),
         ("system", "Game objective: {objective}"),
         ("user", "Room description: {description}"),
         ("user", "What command you want to execute next?"),
@@ -58,8 +56,7 @@ def play_game(env, max_steps: int = 20) -> bool:
         context.append(ai_msg)
         cmd = output_parser.invoke(ai_msg)
 
-    print(f"Wasn't able to solve after {max_steps} steps, "
-          f"commands: {commands}")
+    print(f"Wasn't able to solve after {max_steps} steps, commands: {commands}")
     return False
 
 

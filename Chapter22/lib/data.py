@@ -30,24 +30,12 @@ class ForestEnv(magent_parallel_env, EzPickle):
         "render_fps": 5,
     }
 
-    def __init__(
-        self,
-        map_size: int = MAP_SIZE,
-        max_cycles: int = MAX_CYCLES,
-        extra_features: bool = False,
-        render_mode: tt.Optional[str] = None,
-        seed: tt.Optional[int] = None,
-        count_walls: int = COUNT_WALLS,
-        count_deer: int = COUNT_DEER,
-        count_tigers: int = COUNT_TIGERS,
-    ):
-        EzPickle.__init__(
-            self, map_size, max_cycles,
-            extra_features, render_mode, seed,
-        )
-        env = GridWorld(
-            self.get_config(map_size), map_size=map_size
-        )
+    def __init__(self, map_size: int = MAP_SIZE, max_cycles: int = MAX_CYCLES,
+                 extra_features: bool = False, render_mode: tt.Optional[str] = None,
+                 seed: tt.Optional[int] = None, count_walls: int = COUNT_WALLS,
+                 count_deer: int = COUNT_DEER, count_tigers: int = COUNT_TIGERS):
+        EzPickle.__init__(self, map_size, max_cycles, extra_features, render_mode, seed)
+        env = GridWorld(self.get_config(map_size), map_size=map_size)
 
         handles = env.get_handles()
         self.count_walls = count_walls
@@ -55,10 +43,8 @@ class ForestEnv(magent_parallel_env, EzPickle):
         self.count_tigers = count_tigers
 
         names = ["deer", "tiger"]
-        super().__init__(
-            env, handles, names, map_size, max_cycles,
-            [-1, 1], False, extra_features, render_mode,
-        )
+        super().__init__(env, handles, names, map_size, max_cycles, [-1, 1],
+                         False, extra_features, render_mode)
 
     @classmethod
     def get_config(cls, map_size: int):
@@ -189,13 +175,9 @@ class MAgentExperienceSourceFirstLast:
     """
     2-step experience source for MAgent parallel environment
     """
-    def __init__(
-            self, env: magent_parallel_env,
-            agents_by_group: tt.Dict[str, BaseAgent],
-            track_reward_group: str,
-            env_seed: tt.Optional[int] = None,
-            filter_group: tt.Optional[str] = None,
-    ):
+    def __init__(self, env: magent_parallel_env, agents_by_group: tt.Dict[str, BaseAgent],
+                 track_reward_group: str, env_seed: tt.Optional[int] = None,
+                 filter_group: tt.Optional[str] = None):
         self.env = env
         self.agents_by_group = agents_by_group
         self.track_reward_group = track_reward_group
@@ -218,8 +200,7 @@ class MAgentExperienceSourceFirstLast:
         a, _ = agent_id.split("_", maxsplit=1)
         return a
 
-    def __iter__(self) -> \
-            tt.Generator[ExperienceFirstLastMARL, None, None]:
+    def __iter__(self) -> tt.Generator[ExperienceFirstLastMARL, None, None]:
         # iterate episodes
         while True:
             # initial observation
@@ -227,10 +208,7 @@ class MAgentExperienceSourceFirstLast:
 
             # agent states are kept in groups
             agent_states = {
-                prefix: [
-                    self.agents_by_group[prefix].initial_state()
-                    for _ in group
-                ]
+                prefix: [self.agents_by_group[prefix].initial_state() for _ in group]
                 for prefix, group in self.group_agents.items()
             }
 
@@ -243,12 +221,10 @@ class MAgentExperienceSourceFirstLast:
                 for prefix, group in self.group_agents.items():
                     gr_obs = [
                         cur_obs[agent_id]
-                        for agent_id in group
-                        if agent_id in cur_obs
+                        for agent_id in group if agent_id in cur_obs
                     ]
-                    gr_actions, gr_states = \
-                        self.agents_by_group[prefix](
-                            gr_obs, agent_states[prefix])
+                    gr_actions, gr_states = self.agents_by_group[prefix](
+                        gr_obs, agent_states[prefix])
                     agent_states[prefix] = gr_states
                     idx = 0
                     for agent_id in group:
@@ -257,8 +233,7 @@ class MAgentExperienceSourceFirstLast:
                         actions[agent_id] = gr_actions[idx]
                         idx += 1
                 # perform the action
-                new_obs, rewards, dones, truncs, _ = \
-                    self.env.step(actions)
+                new_obs, rewards, dones, truncs, _ = self.env.step(actions)
 
                 # compute and yeld experience items
                 # list of agents was updated (deads cleared),
@@ -274,11 +249,8 @@ class MAgentExperienceSourceFirstLast:
                     if dones[agent_id] or truncs[agent_id]:
                         last_state = None
                     yield ExperienceFirstLastMARL(
-                        state=cur_obs[agent_id],
-                        action=actions[agent_id],
-                        reward=reward,
-                        last_state=last_state,
-                        group=group,
+                        state=cur_obs[agent_id], action=actions[agent_id],
+                        reward=reward, last_state=last_state, group=group
                     )
                 # update observations
                 cur_obs = new_obs
@@ -286,8 +258,7 @@ class MAgentExperienceSourceFirstLast:
             # episode ended
             self.total_steps.append(episode_steps)
             tr_group = self.group_agents[self.track_reward_group]
-            self.total_rewards.append(
-                episode_rewards / len(tr_group))
+            self.total_rewards.append(episode_rewards / len(tr_group))
 
     def pop_total_rewards(self) -> tt.List[float]:
         r = self.total_rewards

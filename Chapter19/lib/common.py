@@ -96,22 +96,22 @@ def unpack_batch(batch: tt.List[ExperienceFirstLast],
     not_done_idx = []
     last_states = []
     for idx, exp in enumerate(batch):
-        states.append(np.array(exp.state, copy=False))
+        states.append(np.asarray(exp.state))
         actions.append(int(exp.action))
         rewards.append(exp.reward)
         if exp.last_state is not None:
             not_done_idx.append(idx)
-            last_states.append(np.array(exp.last_state, copy=False))
+            last_states.append(np.asarray(exp.last_state))
 
     states_t = torch.FloatTensor(
-        np.array(states, copy=False)).to(device)
+        np.asarray(states)).to(device)
     actions_t = torch.LongTensor(actions).to(device)
 
     # handle rewards
     rewards_np = np.array(rewards, dtype=np.float32)
     if not_done_idx:
         last_states_t = torch.FloatTensor(
-            np.array(last_states, copy=False)).to(device)
+            np.asarray(last_states)).to(device)
         last_vals_t = net(last_states_t)[1]
         last_vals_np = last_vals_t.data.cpu().numpy()[:, 0]
         last_vals_np *= gamma ** reward_steps

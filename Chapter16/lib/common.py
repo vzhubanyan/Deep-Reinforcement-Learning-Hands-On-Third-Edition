@@ -58,7 +58,7 @@ def unpack_batch_a2c(
             not_done_idx.append(idx)
             last_states.append(exp.last_state)
     states_v = ptan.agent.float32_preprocessor(states).to(device)
-    actions_v = torch.FloatTensor(np.array(actions, copy=False)).to(device)
+    actions_v = torch.FloatTensor(np.asarray(actions)).to(device)
 
     # handle rewards
     rewards_np = np.array(rewards, dtype=np.float32)
@@ -73,18 +73,14 @@ def unpack_batch_a2c(
 
 
 @torch.no_grad()
-def unpack_batch_sac(
-        batch: tt.List[ptan.experience.ExperienceFirstLast],
-        val_net: model.ModelCritic,
-        twinq_net: model.ModelSACTwinQ,
-        policy_net: model.ModelActor,
-        gamma: float, ent_alpha: float,
-        device: torch.device):
+def unpack_batch_sac(batch: tt.List[ptan.experience.ExperienceFirstLast],
+                     val_net: model.ModelCritic, twinq_net: model.ModelSACTwinQ,
+                     policy_net: model.ModelActor, gamma: float, ent_alpha: float,
+                     device: torch.device):
     """
     Unpack Soft Actor-Critic batch
     """
-    states_v, actions_v, ref_q_v = \
-        unpack_batch_a2c(batch, val_net, gamma, device)
+    states_v, actions_v, ref_q_v = unpack_batch_a2c(batch, val_net, gamma, device)
 
     # references for the critic network
     mu_v = policy_net(states_v)
@@ -99,11 +95,8 @@ def unpack_batch_sac(
 
 
 def calc_adv_ref(trajectory: tt.List[ptan.experience.Experience],
-                 net_crt: model.ModelCritic,
-                 states_v: torch.Tensor,
-                 gamma: float,
-                 gae_lambda: float,
-                 device: torch.device):
+                 net_crt: model.ModelCritic, states_v: torch.Tensor, gamma: float,
+                 gae_lambda: float, device: torch.device):
     """
     By trajectory calculate advantage and 1-step ref value
     :param trajectory: trajectory list
@@ -117,9 +110,8 @@ def calc_adv_ref(trajectory: tt.List[ptan.experience.Experience],
     last_gae = 0.0
     result_adv = []
     result_ref = []
-    for val, next_val, (exp,) in zip(reversed(values[:-1]),
-                                     reversed(values[1:]),
-                                     reversed(trajectory[:-1])):
+    for val, next_val, (exp,) in zip(
+            reversed(values[:-1]), reversed(values[1:]), reversed(trajectory[:-1])):
         if exp.done_trunc:
             delta = exp.reward - val
             last_gae = delta
@@ -129,8 +121,6 @@ def calc_adv_ref(trajectory: tt.List[ptan.experience.Experience],
         result_adv.append(last_gae)
         result_ref.append(last_gae + val)
 
-    adv_v = torch.FloatTensor(np.array(list(reversed(result_adv)),
-                                       copy=False))
-    ref_v = torch.FloatTensor(np.array(list(reversed(result_ref)),
-                                       copy=False))
+    adv_v = torch.FloatTensor(np.asarray(list(reversed(result_adv))))
+    ref_v = torch.FloatTensor(np.asarray(list(reversed(result_ref))))
     return adv_v.to(device), ref_v.to(device)

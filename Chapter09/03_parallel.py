@@ -35,8 +35,7 @@ def play_func(params: common.Hyperparams, net: dqn_model.DQN,
     env = ptan.common.wrappers.wrap_dqn(env)
     device = torch.device(dev_name)
 
-    selector = ptan.actions.EpsilonGreedyActionSelector(
-        epsilon=params.epsilon_start)
+    selector = ptan.actions.EpsilonGreedyActionSelector(epsilon=params.epsilon_start)
     epsilon_tracker = common.EpsilonTracker(selector, params)
     agent = ptan.agent.DQNAgent(net, selector, device=device)
     exp_source = ptan.experience.ExperienceSourceFirstLast(
@@ -46,16 +45,12 @@ def play_func(params: common.Hyperparams, net: dqn_model.DQN,
         epsilon_tracker.frame(frame_idx//2)
         exp_queue.put(exp)
         for reward, steps in exp_source.pop_rewards_steps():
-            ee = EpisodeEnded(
-                reward=reward, steps=steps,
-                epsilon=selector.epsilon
-            )
+            ee = EpisodeEnded(reward=reward, steps=steps, epsilon=selector.epsilon)
             exp_queue.put(ee)
 
 
 class BatchGenerator:
-    def __init__(self, buffer_size: int,
-                 exp_queue: mp.Queue,
+    def __init__(self, buffer_size: int, exp_queue: mp.Queue,
                  fps_handler: ptan_ignite.EpisodeFPSHandler,
                  initial: int, batch_size: int):
         self.buffer = ptan.experience.ExperienceReplayBuffer(
@@ -77,8 +72,7 @@ class BatchGenerator:
             while self.exp_queue.qsize() > 0:
                 exp = self.exp_queue.get()
                 if isinstance(exp, EpisodeEnded):
-                    self._rewards_steps.append(
-                        (exp.reward, exp.steps))
+                    self._rewards_steps.append((exp.reward, exp.steps))
                     self.epsilon = exp.epsilon
                 else:
                     self.buffer._add(exp)

@@ -28,8 +28,7 @@ class ModelA2C(nn.Module):
 
     def forward(self, x: torch.Tensor):
         base_out = self.base(x)
-        return self.mu(base_out), self.var(base_out), \
-               self.value(base_out)
+        return self.mu(base_out), self.var(base_out), self.value(base_out)
 
 
 class DDPGActor(nn.Module):
@@ -86,8 +85,7 @@ class D4PGCritic(nn.Module):
         )
 
         delta = (v_max - v_min) / (n_atoms - 1)
-        self.register_buffer("supports", torch.arange(
-            v_min, v_max + delta, delta))
+        self.register_buffer("supports", torch.arange(v_min, v_max + delta, delta))
 
     def forward(self, x: torch.Tensor, a: torch.Tensor):
         obs = self.obs_net(x)
@@ -104,8 +102,7 @@ class AgentA2C(ptan.agent.BaseAgent):
         self.net = net
         self.device = device
 
-    def __call__(self, states: ptan.agent.States,
-                 agent_states: ptan.agent.AgentStates):
+    def __call__(self, states: ptan.agent.States, agent_states: ptan.agent.AgentStates):
         states_v = ptan.agent.float32_preprocessor(states)
         states_v = states_v.to(self.device)
 
@@ -121,10 +118,8 @@ class AgentDDPG(ptan.agent.BaseAgent):
     """
     Agent implementing Orstein-Uhlenbeck exploration process
     """
-    def __init__(self, net: DDPGActor,
-                 device: torch.device = torch.device('cpu'),
-                 ou_enabled: bool = True,
-                 ou_mu: float = 0.0, ou_teta: float = 0.15,
+    def __init__(self, net: DDPGActor, device: torch.device = torch.device('cpu'),
+                 ou_enabled: bool = True, ou_mu: float = 0.0, ou_teta: float = 0.15,
                  ou_sigma: float = 0.2, ou_epsilon: float = 1.0):
         self.net = net
         self.device = device
@@ -137,8 +132,7 @@ class AgentDDPG(ptan.agent.BaseAgent):
     def initial_state(self):
         return None
 
-    def __call__(self, states: ptan.agent.States,
-                 agent_states: ptan.agent.AgentStates):
+    def __call__(self, states: ptan.agent.States, agent_states: ptan.agent.AgentStates):
         states_v = ptan.agent.float32_preprocessor(states)
         states_v = states_v.to(self.device)
         mu_v = self.net(states_v)
@@ -148,11 +142,9 @@ class AgentDDPG(ptan.agent.BaseAgent):
             new_a_states = []
             for a_state, action in zip(agent_states, actions):
                 if a_state is None:
-                    a_state = np.zeros(
-                        shape=action.shape, dtype=np.float32)
+                    a_state = np.zeros(shape=action.shape, dtype=np.float32)
                 a_state += self.ou_teta * (self.ou_mu - a_state)
-                a_state += self.ou_sigma * np.random.normal(
-                    size=action.shape)
+                a_state += self.ou_sigma * np.random.normal(size=action.shape)
 
                 action += self.ou_epsilon * a_state
                 new_a_states.append(a_state)
@@ -167,20 +159,17 @@ class AgentD4PG(ptan.agent.BaseAgent):
     """
     Agent implementing noisy agent
     """
-    def __init__(self, net: DDPGActor,
-                 device: torch.device = torch.device("cpu"),
+    def __init__(self, net: DDPGActor, device: torch.device = torch.device("cpu"),
                  epsilon: float = 0.3):
         self.net = net
         self.device = device
         self.epsilon = epsilon
 
-    def __call__(self, states: ptan.agent.States,
-                 agent_states: ptan.agent.AgentStates):
+    def __call__(self, states: ptan.agent.States, agent_states: ptan.agent.AgentStates):
         states_v = ptan.agent.float32_preprocessor(states)
         states_v = states_v.to(self.device)
         mu_v = self.net(states_v)
         actions = mu_v.data.cpu().numpy()
-        actions += self.epsilon * np.random.normal(
-            size=actions.shape)
+        actions += self.epsilon * np.random.normal(size=actions.shape)
         actions = np.clip(actions, -1, 1)
         return actions, agent_states

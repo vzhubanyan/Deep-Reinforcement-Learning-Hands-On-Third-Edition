@@ -65,10 +65,10 @@ def train(params: common.Hyperparams,
             if eval_states is None:
                 eval_states = buffer.sample(STATES_TO_EVALUATE)
                 eval_states = [
-                    np.array(transition.state, copy=False)
+                    np.asarray(transition.state)
                     for transition in eval_states
                 ]
-                eval_states = np.array(eval_states, copy=False)
+                eval_states = np.asarray(eval_states)
                 engine.state.eval_states = eval_states
             evaluate_states(eval_states, net, device, engine)
         return {
@@ -77,8 +77,7 @@ def train(params: common.Hyperparams,
         }
 
     engine = Engine(process_batch)
-    common.setup_ignite(engine, params, exp_source, NAME,
-                        extra_metrics=('adv', 'val'))
+    common.setup_ignite(engine, params, exp_source, NAME, extra_metrics=('adv', 'val'))
     r = engine.run(common.batch_generator(
         buffer, params.replay_initial, params.batch_size))
     if r.solved:

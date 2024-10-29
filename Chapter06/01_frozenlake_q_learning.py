@@ -30,8 +30,7 @@ class Agent:
             self.state = new_state
         return old_state, action, float(reward), new_state
 
-    def best_value_and_action(self, state: State) -> \
-            tt.Tuple[float, Action]:
+    def best_value_and_action(self, state: State) -> tt.Tuple[float, Action]:
         best_value, best_action = None, None
         for action in range(self.env.action_space.n):
             action_value = self.values[(state, action)]
@@ -40,8 +39,7 @@ class Agent:
                 best_action = action
         return best_value, best_action
 
-    def value_update(self, state: State, action: Action,
-                     reward: float, next_state: State):
+    def value_update(self, state: State, action: Action, reward: float, next_state: State):
         best_val, _ = self.best_value_and_action(next_state)
         new_val = reward + GAMMA * best_val
         old_val = self.values[(state, action)]
@@ -79,8 +77,7 @@ if __name__ == "__main__":
         test_reward /= TEST_EPISODES
         writer.add_scalar("reward", test_reward, iter_no)
         if test_reward > best_reward:
-            print("%d: Best test reward updated %.3f -> %.3f" % (
-                iter_no, best_reward, test_reward))
+            print("%d: Best test reward updated %.3f -> %.3f" % (iter_no, best_reward, test_reward))
             best_reward = test_reward
         if test_reward > 0.80:
             print("Solved in %d iterations!" % iter_no)

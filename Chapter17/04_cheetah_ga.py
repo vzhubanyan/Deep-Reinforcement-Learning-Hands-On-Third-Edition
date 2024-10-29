@@ -49,8 +49,7 @@ def mutate_net(net: Net, seed: int, copy_net: bool = True) -> Net:
 
 def build_net(env: gym.Env, seeds: tt.List[int]) -> Net:
     torch.manual_seed(seeds[0])
-    net = Net(env.observation_space.shape[0],
-              env.action_space.shape[0])
+    net = Net(env.observation_space.shape[0], env.action_space.shape[0])
     for seed in seeds[1:]:
         net = mutate_net(net, seed, copy_net=False)
     return net
@@ -82,10 +81,8 @@ def worker_func(input_queue: mp.Queue, output_queue: mp.Queue):
             else:
                 net = build_net(env, net_seeds)
             new_cache[net_seeds] = net
-            reward, steps = common.evaluate(
-                env, net, get_max_action=False)
-            output_queue.put(OutputItem(
-                seeds=net_seeds, reward=reward, steps=steps))
+            reward, steps = common.evaluate(env, net, get_max_action=False)
+            output_queue.put(OutputItem(seeds=net_seeds, reward=reward, steps=steps))
         cache = new_cache
 
 

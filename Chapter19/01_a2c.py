@@ -46,9 +46,7 @@ def make_env_func(env_idx: int, db_path: tt.Optional[str],
         e = gym.make("SeaquestNoFrameskip-v4")
         if reward_path is not None:
             p = pathlib.Path(reward_path)
-            e = rlhf.RewardModelWrapper(
-                e, p, dev=dev,
-                metrics_queue=metrics_queue)
+            e = rlhf.RewardModelWrapper(e, p, dev=dev, metrics_queue=metrics_queue)
         if db_path is not None:
             p = pathlib.Path(db_path)
             p.mkdir(parents=True, exist_ok=True)
@@ -154,7 +152,7 @@ if __name__ == "__main__":
                           env.single_action_space.n).to(device)
     print(net)
     if args.model is not None:
-        net.load_state_dict(torch.load(args.model))
+        net.load_state_dict(torch.load(args.model, weights_only=True))
         print("Loaded model " + args.model)
     agent = ptan.agent.PolicyAgent(
         lambda x: net(x)[0], apply_softmax=True, device=device)

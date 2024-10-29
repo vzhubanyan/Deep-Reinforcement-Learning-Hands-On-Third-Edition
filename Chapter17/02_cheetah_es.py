@@ -74,10 +74,8 @@ def compute_centered_ranks(x):
     return y
 
 
-def train_step(optimizer: optim.Optimizer, net: Net,
-               batch_noise: tt.List[common.TNoise],
-               batch_reward: tt.List[float],
-               writer: SummaryWriter, step_idx: int,
+def train_step(optimizer: optim.Optimizer, net: Net, batch_noise: tt.List[common.TNoise],
+               batch_reward: tt.List[float], writer: SummaryWriter, step_idx: int,
                noise_std: float):
     weighted_noise = None
     norm_reward = compute_centered_ranks(np.array(batch_reward))
@@ -101,8 +99,7 @@ def train_step(optimizer: optim.Optimizer, net: Net,
 def worker_func(params_queue: mp.Queue, rewards_queue: mp.Queue,
                 device: torch.device, noise_std: float):
     env = make_env()
-    net = Net(env.observation_space.shape[0],
-              env.action_space.shape[0]).to(device)
+    net = Net(env.observation_space.shape[0], env.action_space.shape[0]).to(device)
     net.eval()
 
     while True:
@@ -114,16 +111,12 @@ def worker_func(params_queue: mp.Queue, rewards_queue: mp.Queue,
         for _ in range(ITERS_PER_UPDATE):
             seed = np.random.randint(low=0, high=65535)
             np.random.seed(seed)
-            noise, neg_noise = common.sample_noise(
-                net, device=device)
-            pos_reward, pos_steps = common.eval_with_noise(
-                env, net, noise, noise_std,
+            noise, neg_noise = common.sample_noise(net, device=device)
+            pos_reward, pos_steps = common.eval_with_noise(env, net, noise, noise_std,
                 get_max_action=False, device=device)
-            neg_reward, neg_steps = common.eval_with_noise(
-                env, net, neg_noise, noise_std,
+            neg_reward, neg_steps = common.eval_with_noise(env, net, neg_noise, noise_std,
                 get_max_action=False, device=device)
-            rewards_queue.put(RewardsItem(
-                seed=seed, pos_reward=pos_reward,
+            rewards_queue.put(RewardsItem(seed=seed, pos_reward=pos_reward,
                 neg_reward=neg_reward, steps=pos_steps+neg_steps))
 
 
@@ -142,16 +135,12 @@ if __name__ == "__main__":
     net = Net(env.observation_space.shape[0], env.action_space.shape[0])
     print(net)
 
-    params_queues = [
-        mp.Queue(maxsize=1)
-        for _ in range(PROCESSES_COUNT)
-    ]
+    params_queues = [mp.Queue(maxsize=1) for _ in range(PROCESSES_COUNT)]
     rewards_queue = mp.Queue(maxsize=ITERS_PER_UPDATE)
     workers = []
 
     for params_queue in params_queues:
-        p_args = (params_queue, rewards_queue,
-                  device, args.noise_std)
+        p_args = (params_queue, rewards_queue, device, args.noise_std)
         proc = mp.Process(target=worker_func, args=p_args)
         proc.start()
         workers.append(proc)

@@ -48,15 +48,11 @@ if __name__ == "__main__":
     env = gym.make(env_id, **extra)
     test_env = gym.make(env_id, **extra)
 
-    act_net = model.ModelActor(
-        env.observation_space.shape[0],
-        env.action_space.shape[0]).to(device)
-    crt_net = model.ModelCritic(
-        env.observation_space.shape[0]
-    ).to(device)
-    twinq_net = model.ModelSACTwinQ(
-        env.observation_space.shape[0],
-        env.action_space.shape[0]).to(device)
+    act_net = model.ModelActor(env.observation_space.shape[0],
+                               env.action_space.shape[0]).to(device)
+    crt_net = model.ModelCritic(env.observation_space.shape[0]).to(device)
+    twinq_net = model.ModelSACTwinQ(env.observation_space.shape[0],
+                                    env.action_space.shape[0]).to(device)
     print(act_net)
     print(crt_net)
     print(twinq_net)
@@ -67,8 +63,7 @@ if __name__ == "__main__":
     agent = model.AgentDDPG(act_net, device=device)
     exp_source = ptan.experience.ExperienceSourceFirstLast(
         env, agent, gamma=GAMMA, steps_count=1)
-    buffer = ptan.experience.ExperienceReplayBuffer(
-        exp_source, buffer_size=REPLAY_SIZE)
+    buffer = ptan.experience.ExperienceReplayBuffer(exp_source, buffer_size=REPLAY_SIZE)
     act_opt = optim.Adam(act_net.parameters(), lr=LR_ACTS)
     crt_opt = optim.Adam(crt_net.parameters(), lr=LR_VALS)
     twinq_opt = optim.Adam(twinq_net.parameters(), lr=LR_VALS)
@@ -91,10 +86,8 @@ if __name__ == "__main__":
                     continue
 
                 batch = buffer.sample(BATCH_SIZE)
-                states_v, actions_v, ref_vals_v, ref_q_v = \
-                    common.unpack_batch_sac(
-                        batch, tgt_crt_net.target_model,
-                        twinq_net, act_net, GAMMA,
+                states_v, actions_v, ref_vals_v, ref_q_v = common.unpack_batch_sac(
+                        batch, tgt_crt_net.target_model, twinq_net, act_net, GAMMA,
                         SAC_ENTROPY_ALPHA, device)
 
                 tb_tracker.track("ref_v", ref_vals_v.mean(), frame_idx)
@@ -103,10 +96,8 @@ if __name__ == "__main__":
                 # train TwinQ
                 twinq_opt.zero_grad()
                 q1_v, q2_v = twinq_net(states_v, actions_v)
-                q1_loss_v = F.mse_loss(q1_v.squeeze(),
-                                       ref_q_v.detach())
-                q2_loss_v = F.mse_loss(q2_v.squeeze(),
-                                       ref_q_v.detach())
+                q1_loss_v = F.mse_loss(q1_v.squeeze(), ref_q_v.detach())
+                q2_loss_v = F.mse_loss(q2_v.squeeze(), ref_q_v.detach())
                 q_loss_v = q1_loss_v + q2_loss_v
                 q_loss_v.backward()
                 twinq_opt.step()
@@ -116,8 +107,7 @@ if __name__ == "__main__":
                 # Critic
                 crt_opt.zero_grad()
                 val_v = crt_net(states_v)
-                v_loss_v = F.mse_loss(val_v.squeeze(),
-                                      ref_vals_v.detach())
+                v_loss_v = F.mse_loss(val_v.squeeze(), ref_vals_v.detach())
                 v_loss_v.backward()
                 crt_opt.step()
                 tb_tracker.track("loss_v", v_loss_v, frame_idx)

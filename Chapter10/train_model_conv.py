@@ -90,9 +90,9 @@ if __name__ == "__main__":
 
         if getattr(engine.state, "eval_states", None) is None:
             eval_states = buffer.sample(STATES_TO_EVALUATE)
-            eval_states = [np.array(transition.state, copy=False)
+            eval_states = [np.asarray(transition.state)
                            for transition in eval_states]
-            engine.state.eval_states = np.array(eval_states, copy=False)
+            engine.state.eval_states = np.asarray(eval_states)
 
         return {
             "loss": loss_v.item(),

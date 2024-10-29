@@ -32,7 +32,7 @@ if __name__ == "__main__":
     else:
         net = models.SimpleFFDQN(env.observation_space.shape[0], env.action_space.n)
 
-    net.load_state_dict(torch.load(args.model, map_location=lambda storage, loc: storage))
+    net.load_state_dict(torch.load(args.model, map_location=lambda storage, loc: storage, weights_only=True))
 
     obs, _ = env.reset()
     start_price = env._state._cur_close()

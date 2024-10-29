@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     net = model_vnc.ModelMultimodal(input_shape=wob_vnc.WOB_SHAPE, n_actions=env.action_space.n)
     if args.model:
-        net.load_state_dict(torch.load(args.model))
+        net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu'), weights_only=True))
         preprocessor = model_vnc.MultimodalPreprocessor.load(args.model[:-4] + ".pre")
     else:
         preprocessor = model_vnc.MultimodalPreprocessor()

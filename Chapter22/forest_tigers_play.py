@@ -49,7 +49,7 @@ if __name__ == "__main__":
         env.observation_spaces['tiger_0'].shape,
         env.action_spaces['tiger_0'].n,
     )
-    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu'), weights_only=True))
     tiger_agent = ptan.agent.DQNAgent(
         net, ptan.actions.ArgmaxActionSelector())
     deer_agent = data.RandomMAgent(env, env.handles[0])

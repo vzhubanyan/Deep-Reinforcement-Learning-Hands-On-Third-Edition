@@ -122,21 +122,17 @@ if __name__ == "__main__":
     tgt_net = ptan.agent.TargetNet(net)
     print(net)
 
-    action_selector = ptan.actions.EpsilonGreedyActionSelector(
-        epsilon=PARAMS.epsilon_start)
+    action_selector = ptan.actions.EpsilonGreedyActionSelector(epsilon=PARAMS.epsilon_start)
     epsilon_tracker = common.EpsilonTracker(action_selector, PARAMS)
     tiger_agent = ptan.agent.DQNAgent(net, action_selector, device)
     deer_agent = data.RandomMAgent(env, env.handles[0])
     exp_source = data.MAgentExperienceSourceFirstLast(
         env,
-        agents_by_group={
-            'deer': deer_agent, 'tiger': tiger_agent
-        },
+        agents_by_group={'deer': deer_agent, 'tiger': tiger_agent},
         track_reward_group="tiger",
         filter_group="tiger",
     )
-    buffer = ptan.experience.ExperienceReplayBuffer(
-        exp_source, PARAMS.replay_size)
+    buffer = ptan.experience.ExperienceReplayBuffer(exp_source, PARAMS.replay_size)
     optimizer = optim.Adam(net.parameters(), lr=PARAMS.learning_rate)
 
     def process_batch(engine, batch):

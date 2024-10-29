@@ -84,7 +84,7 @@ def train(config: dict, device: torch.device) -> dict:
             break
         baseline_buf.add(exp.reward)
         baseline = baseline_buf.mean()
-        batch_states.append(np.array(exp.state, copy=False))
+        batch_states.append(np.asarray(exp.state))
         batch_actions.append(int(exp.action))
         batch_scales.append(exp.reward - baseline)
 
@@ -101,7 +101,7 @@ def train(config: dict, device: torch.device) -> dict:
             continue
 
         train_step_idx += 1
-        states_v = torch.as_tensor(np.array(batch_states, copy=False)).to(device)
+        states_v = torch.as_tensor(np.asarray(batch_states)).to(device)
         batch_actions_t = torch.as_tensor(batch_actions).to(device)
         batch_scale_v = torch.as_tensor(batch_scales).to(device)
 

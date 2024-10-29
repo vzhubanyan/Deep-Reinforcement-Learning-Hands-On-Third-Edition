@@ -41,7 +41,7 @@ class Session:
     def __init__(self, model_file, player_moves_first, player_id):
         self.model_file = model_file
         self.model = model.Net(input_shape=model.OBS_SHAPE, actions_n=game.GAME_COLS)
-        self.model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage))
+        self.model.load_state_dict(torch.load(model_file, map_location=lambda storage, loc: storage, weights_only=True))
         self.state = game.INITIAL_STATE
         self.value = None
         self.player_moves_first = player_moves_first

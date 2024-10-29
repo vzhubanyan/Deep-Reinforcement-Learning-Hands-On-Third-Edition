@@ -71,9 +71,8 @@ class Database:
 
 
 class EpisodeRecorderWrapper(gym.Wrapper):
-    def __init__(self, env: gym.Env, db_path: pathlib.Path,
-                 env_idx: int, start_prob: float = START_PROB,
-                 steps_count: int = EPISODE_STEPS):
+    def __init__(self, env: gym.Env, db_path: pathlib.Path, env_idx: int,
+                 start_prob: float = START_PROB, steps_count: int = EPISODE_STEPS):
         """
         Constructs the DB episode storage wrapper.
         :param env: environment to wrap
@@ -92,32 +91,25 @@ class EpisodeRecorderWrapper(gym.Wrapper):
         self._prev_obs = None
         self._step_idx = 0
 
-    def reset(
-        self, *, seed: int | None = None,
-            options: dict[str, tt.Any] | None = None
-    ) -> tuple[WrapperObsType, dict[str, tt.Any]]:
+    def reset(self, *, seed: int | None = None, options: dict[str, tt.Any] | None = None) \
+            -> tuple[WrapperObsType, dict[str, tt.Any]]:
         self._step_idx += 1
         res = super().reset(seed=seed, options=options)
         if self._is_storing:
             self._prev_obs = deepcopy(res[0])
         return res
 
-    def step(
-        self, action: WrapperActType
-    ) -> tuple[
+    def step(self, action: WrapperActType) -> tuple[
         WrapperObsType, SupportsFloat, bool, bool, dict[str, tt.Any]
     ]:
         self._step_idx += 1
         obs, r, is_done, is_tr, extra = super().step(action)
         if self._is_storing:
-            self._steps.append(
-                EpisodeStep(self._prev_obs, int(action))
-            )
+            self._steps.append(EpisodeStep(self._prev_obs, int(action)))
             self._prev_obs = deepcopy(obs)
 
             if len(self._steps) >= self._steps_count:
-                store_segment(self._store_path, self._step_idx,
-                              self._steps)
+                store_segment(self._store_path, self._step_idx, self._steps)
                 self._is_storing = False
                 self._steps.clear()
         elif random.random() <= self._start_prob:
@@ -127,8 +119,7 @@ class EpisodeRecorderWrapper(gym.Wrapper):
         return obs, r, is_done, is_tr, extra
 
 
-def store_segment(root_path: pathlib.Path, step_idx: int,
-                  steps: tt.List[EpisodeStep]):
+def store_segment(root_path: pathlib.Path, step_idx: int, steps: tt.List[EpisodeStep]):
     out_path = root_path / f"{step_idx:08d}.dat"
     dat = pickle.dumps(steps)
     out_path.write_bytes(dat)
@@ -226,8 +217,7 @@ def steps_to_tensors(path: pathlib.Path, total_actions: int) -> \
 
 
 class RewardModel(nn.Module):
-    def __init__(self, input_shape: tt.Tuple[int, ...],
-                 n_actions: int):
+    def __init__(self, input_shape: tt.Tuple[int, ...], n_actions: int):
         super().__init__()
 
         self.conv = nn.Sequential(
@@ -256,8 +246,7 @@ class RewardModel(nn.Module):
             nn.Linear(64, 1),
         )
 
-    def forward(self, obs: torch.ByteTensor,
-                acts: torch.Tensor) -> torch.Tensor:
+    def forward(self, obs: torch.ByteTensor, acts: torch.Tensor) -> torch.Tensor:
         conv_out = self.conv(obs / 255)
         comb = torch.hstack((conv_out, acts))
         out = self.out(comb)
@@ -269,9 +258,8 @@ class RewardModelWrapper(gym.Wrapper):
     KEY_REWARD_MU = "reward_mu"
     KEY_REWARD_STD = "reward_std"
 
-    def __init__(self, env: gym.Env, model_path: pathlib.Path,
-                 dev: torch.device, reward_window: int = 100,
-                 metrics_queue: tt.Optional[queue.Queue] = None):
+    def __init__(self, env: gym.Env, model_path: pathlib.Path, dev: torch.device,
+                 reward_window: int = 100, metrics_queue: tt.Optional[queue.Queue] = None):
         """
         Constructs reward model wrapper. Use given model
         to get the reward for the observations. This reward is
@@ -287,13 +275,9 @@ class RewardModelWrapper(gym.Wrapper):
         s = env.observation_space.shape
         self.total_actions = env.action_space.n
         self.model = RewardModel(
-            input_shape=(s[2], s[0], s[1]),
-            n_actions=self.total_actions
-        )
-        self.model.load_state_dict(
-            torch.load(model_path,
-                       map_location=torch.device('cpu'))
-        )
+            input_shape=(s[2], s[0], s[1]), n_actions=self.total_actions)
+        self.model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'),
+                                              weights_only=True))
         self.model.eval()
         self.model.to(dev)
         self._prev_obs = None
@@ -301,18 +285,14 @@ class RewardModelWrapper(gym.Wrapper):
         self._real_reward_sum = 0.0
         self._metrics_queue = metrics_queue
 
-    def reset(
-            self, *, seed: int | None = None,
-            options: dict[str, tt.Any] | None = None
-    ) -> tuple[WrapperObsType, dict[str, tt.Any]]:
+    def reset(self, *, seed: int | None = None, options: dict[str, tt.Any] | None = None) \
+            -> tuple[WrapperObsType, dict[str, tt.Any]]:
         res = super().reset(seed=seed, options=options)
         self._prev_obs = deepcopy(res[0])
         self._real_reward_sum = 0.0
         return res
 
-    def step(
-        self, action: WrapperActType
-    ) -> tuple[
+    def step(self, action: WrapperActType) -> tuple[
         WrapperObsType, SupportsFloat, bool, bool, dict[str, tt.Any]
     ]:
         obs, r, is_done, is_tr, extra = super().step(action)
@@ -321,8 +301,7 @@ class RewardModelWrapper(gym.Wrapper):
         p_obs_t = torch.as_tensor(p_obs).to(self.device)
         p_obs_t.unsqueeze_(0)
         act = np.eye(self.total_actions)[[action]]
-        act_t = torch.as_tensor(act, dtype=torch.float32).\
-            to(self.device)
+        act_t = torch.as_tensor(act, dtype=torch.float32).to(self.device)
         new_r_t = self.model(p_obs_t, act_t)
         new_r = float(new_r_t.item())
 
@@ -337,8 +316,6 @@ class RewardModelWrapper(gym.Wrapper):
             self._metrics_queue.put((self.KEY_REWARD_STD, std))
 
         if is_done or is_tr:
-            self._metrics_queue.put(
-                (self.KEY_REAL_REWARD_SUM, self._real_reward_sum)
-            )
+            self._metrics_queue.put((self.KEY_REAL_REWARD_SUM, self._real_reward_sum))
         self._prev_obs = deepcopy(obs)
         return obs, new_r, is_done, is_tr, extra

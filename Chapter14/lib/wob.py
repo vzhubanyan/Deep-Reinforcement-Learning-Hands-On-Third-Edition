@@ -34,13 +34,10 @@ class MiniWoBClickWrapper(gym.ObservationWrapper):
         self.bin_size = bin_size
         self.keep_text = keep_text
         self.keep_obs = keep_obs
-        img_space = spaces.Box(
-            low=0, high=255, shape=WOB_SHAPE, dtype=np.uint8
-        )
+        img_space = spaces.Box(low=0, high=255, shape=WOB_SHAPE, dtype=np.uint8)
         if keep_text:
             self.observation_space = spaces.Tuple(
-                (img_space, spaces.Text(max_length=1024))
-            )
+                (img_space, spaces.Text(max_length=1024)))
         else:
             self.observation_space = img_space
         self.x_bins = WIDTH // bin_size
@@ -48,9 +45,8 @@ class MiniWoBClickWrapper(gym.ObservationWrapper):
         self.action_space = spaces.Discrete(count)
 
     @classmethod
-    def create(cls, env_name: str, bin_size: int = BIN_SIZE,
-               keep_text: bool = False, keep_obs: bool = False,
-               **kwargs) -> "MiniWoBClickWrapper":
+    def create(cls, env_name: str, bin_size: int = BIN_SIZE, keep_text: bool = False,
+               keep_obs: bool = False, **kwargs) -> "MiniWoBClickWrapper":
         """
         Creates miniwob environment wrapped into the click wrapper
         :param env_name: name of the environment
@@ -64,19 +60,12 @@ class MiniWoBClickWrapper(gym.ObservationWrapper):
         x_bins = WIDTH // bin_size
         y_bins = (HEIGHT - Y_OFS) // bin_size
         act_cfg = ActionSpaceConfig(
-            action_types=(ActionTypes.CLICK_COORDS, ),
-            coord_bins=(x_bins, y_bins),
-        )
-        env = gym.make(
-            env_name, action_space_config=act_cfg,
-            **kwargs
-        )
+            action_types=(ActionTypes.CLICK_COORDS, ), coord_bins=(x_bins, y_bins))
+        env = gym.make(env_name, action_space_config=act_cfg, **kwargs)
         return MiniWoBClickWrapper(
-            env, keep_text=keep_text, keep_obs=keep_obs,
-            bin_size=bin_size)
+            env, keep_text=keep_text, keep_obs=keep_obs, bin_size=bin_size)
 
-    def _observation(self, observation: dict) -> \
-            np.ndarray | tt.Tuple[np.ndarray, str]:
+    def _observation(self, observation: dict) -> np.ndarray | tt.Tuple[np.ndarray, str]:
         text = observation['utterance']
         scr = observation['screenshot']
         scr = np.transpose(scr, (2, 0, 1))
@@ -84,20 +73,19 @@ class MiniWoBClickWrapper(gym.ObservationWrapper):
             return scr, text
         return scr
 
-    def reset(
-            self, *, seed: int | None = None,
-            options: dict[str, tt.Any] | None = None
-    ) -> tuple[gym.core.WrapperObsType, dict[str, tt.Any]]:
+    def reset(self, *, seed: int | None = None, options: dict[str, tt.Any] | None = None) \
+            -> tuple[gym.core.WrapperObsType, dict[str, tt.Any]]:
         obs, info = self.env.reset(seed=seed, options=options)
         if self.keep_obs:
             info[self.FULL_OBS_KEY] = obs
         return self._observation(obs), info
 
     def step(self, action: int) -> tt.Tuple[
-        gym.core.WrapperObsType, gym.core.SupportsFloat,
-        bool, bool, dict[str, tt.Any]
+        gym.core.WrapperObsType, gym.core.SupportsFloat, bool, bool, dict[str, tt.Any]
     ]:
         b_x, b_y = action_to_bins(action, self.bin_size)
+        # click to last two rows might cause MoveOutOfBounds exception
+        b_y = min(b_y, 13)
         new_act = {
             "action_type": 0,
             "coords": np.array((b_x, b_y), dtype=np.int8),
@@ -135,8 +123,7 @@ def action_to_coord(action: int, bin_size: int = BIN_SIZE) -> tt.Tuple[int, int]
     return (b_x * bin_size) + d, Y_OFS + (b_y * bin_size) + d
 
 
-def action_to_bins(action: int,
-                   bin_size: int = BIN_SIZE) -> tt.Tuple[int, int]:
+def action_to_bins(action: int, bin_size: int = BIN_SIZE) -> tt.Tuple[int, int]:
     """
     Convert click action to coords
     :param action: action from 0 to 255 (for bin=10)

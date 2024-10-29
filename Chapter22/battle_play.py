@@ -36,7 +36,7 @@ if __name__ == "__main__":
         env.observation_spaces['a_0'].shape,
         env.action_spaces['a_0'].n,
     )
-    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu')))
+    net.load_state_dict(torch.load(args.model, map_location=torch.device('cpu'), weights_only=True))
     a_agent = ptan.agent.DQNAgent(
         net, ptan.actions.ArgmaxActionSelector())
     b_agent = data.RandomMAgent(env, env.handles[0])

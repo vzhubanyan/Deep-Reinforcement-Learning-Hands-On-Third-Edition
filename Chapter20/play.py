@@ -23,7 +23,7 @@ if __name__ == "__main__":
     nets = []
     for fname in args.models:
         net = model.Net(model.OBS_SHAPE, game.GAME_COLS)
-        net.load_state_dict(torch.load(fname, map_location=lambda storage, loc: storage))
+        net.load_state_dict(torch.load(fname, map_location=lambda storage, loc: storage, weights_only=True))
         net = net.to(device)
         nets.append((fname, net))
 

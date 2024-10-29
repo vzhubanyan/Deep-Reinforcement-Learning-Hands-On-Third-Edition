@@ -36,10 +36,8 @@ BEST_PONG = common.Hyperparams(
 
 def calc_loss_double_dqn(
         batch: tt.List[ptan.experience.ExperienceFirstLast],
-        net: nn.Module, tgt_net: nn.Module, gamma: float,
-        device: torch.device):
-    states, actions, rewards, dones, next_states = \
-        common.unpack_batch(batch)
+        net: nn.Module, tgt_net: nn.Module, gamma: float, device: torch.device):
+    states, actions, rewards, dones, next_states = common.unpack_batch(batch)
 
     states_v = torch.as_tensor(states).to(device)
     actions_v = torch.tensor(actions).to(device)
@@ -53,8 +51,7 @@ def calc_loss_double_dqn(
         next_states_v = torch.as_tensor(next_states).to(device)
         next_state_acts = net(next_states_v).max(1)[1]
         next_state_acts = next_state_acts.unsqueeze(-1)
-        next_state_vals = tgt_net(next_states_v).gather(
-            1, next_state_acts).squeeze(-1)
+        next_state_vals = tgt_net(next_states_v).gather(1, next_state_acts).squeeze(-1)
         next_state_vals[done_mask] = 0.0
         exp_sa_vals = next_state_vals.detach() * gamma + rewards_v
     return nn.MSELoss()(state_action_vals, exp_sa_vals)
@@ -78,19 +75,16 @@ def train(params: common.Hyperparams,
         env, agent, gamma=params.gamma, env_seed=common.SEED)
     buffer = ptan.experience.ExperienceReplayBuffer(
         exp_source, buffer_size=params.replay_size)
-    optimizer = optim.Adam(net.parameters(),
-                           lr=params.learning_rate)
+    optimizer = optim.Adam(net.parameters(), lr=params.learning_rate)
 
     def process_batch(engine, batch):
         optimizer.zero_grad()
         if args.double:
             loss_v = calc_loss_double_dqn(
-                batch, net, tgt_net.target_model,
-                gamma=params.gamma, device=device)
+                batch, net, tgt_net.target_model, gamma=params.gamma, device=device)
         else:
             loss_v = common.calc_loss_dqn(
-                batch, net, tgt_net.target_model,
-                gamma=params.gamma, device=device)
+                batch, net, tgt_net.target_model, gamma=params.gamma, device=device)
         loss_v.backward()
         optimizer.step()
         epsilon_tracker.frame(engine.state.iteration)
@@ -101,14 +95,13 @@ def train(params: common.Hyperparams,
             if eval_states is None:
                 eval_states = buffer.sample(STATES_TO_EVALUATE)
                 eval_states = [
-                    np.array(transition.state, copy=False)
+                    np.asarray(transition.state)
                     for transition in eval_states
                 ]
-                eval_states = np.array(eval_states, copy=False)
+                eval_states = np.asarray(eval_states)
                 engine.state.eval_states = eval_states
             engine.state.metrics["values"] = \
-                common.calc_values_of_states(
-                    eval_states, net, device)
+                common.calc_values_of_states(eval_states, net, device)
         return {
             "loss": loss_v.item(),
             "epsilon": selector.epsilon,
@@ -126,5 +119,8 @@ def train(params: common.Hyperparams,
 
 
 if __name__ == "__main__":
-    args = common.argparser().parse_args()
+    parser = common.argparser()
+    parser.add_argument("--double", default=False, action="store_true",
+                        help = "Enable double dqn, default=disabled")
+    args = parser.parse_args()
     common.train_or_tune(args, train, BEST_PONG)

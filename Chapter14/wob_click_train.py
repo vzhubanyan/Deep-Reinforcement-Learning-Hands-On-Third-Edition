@@ -60,8 +60,7 @@ if __name__ == "__main__":
 
     demo_samples = None
     if args.demo:
-        demo_samples = demos.load_demo_dir(
-            args.demo, gamma=GAMMA, steps=REWARD_STEPS)
+        demo_samples = demos.load_demo_dir(args.demo, gamma=GAMMA, steps=REWARD_STEPS)
         print(f"Loaded {len(demo_samples)} demo samples")
 
     dump_dir = None
@@ -132,15 +131,11 @@ if __name__ == "__main__":
                     if random.random() < DEMO_PROB:
                         random.shuffle(demo_samples)
                         demo_batch = demo_samples[:BATCH_SIZE]
-                        model.train_demo(
-                            net, optimizer, demo_batch, writer,
-                            step_idx, device=device
-                        )
+                        model.train_demo(net, optimizer, demo_batch, writer,
+                                         step_idx, device=device)
 
-                states_v, actions_t, vals_ref_v = \
-                    common.unpack_batch(
-                        batch, net, device=device,
-                        last_val_gamma=GAMMA ** REWARD_STEPS)
+                states_v, actions_t, vals_ref_v = common.unpack_batch(
+                    batch, net, device=device, last_val_gamma=GAMMA ** REWARD_STEPS)
 
                 optimizer.zero_grad()
                 logits_v, value_v = net(states_v)

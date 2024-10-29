@@ -15,10 +15,8 @@ State = collections.namedtuple("State", field_names=[
 RenderedState = collections.namedtuple("RenderedState", field_names=['top', 'front', 'left', 'right', 'back', 'bottom'])
 
 # initial (solved state)
-initial_state = State(corner_pos=tuple(range(8)),
-                      side_pos=tuple(range(12)),
-                      corner_ort=tuple([0]*8),
-                      side_ort=tuple([0]*12))
+initial_state = State(corner_pos=tuple(range(8)), side_pos=tuple(range(12)),
+                      corner_ort=tuple([0]*8), side_ort=tuple([0]*12))
 
 
 def is_initial(state):
@@ -251,4 +249,5 @@ def encode_inplace(target, state):
 _env.register(_env.CubeEnv(name="cube3x3", state_type=State, initial_state=initial_state,
                            is_goal_pred=is_initial, action_enum=Action,
                            transform_func=transform, inverse_action_func=inverse_action,
-                           render_func=render, encoded_shape=encoded_shape, encode_func=encode_inplace))
+                           render_func=render, encoded_shape=encoded_shape,
+                           encode_func=encode_inplace))

@@ -62,16 +62,11 @@ class MCTS:
 
             # choose action to take, in the root node add the Dirichlet noise to the probs
             if cur_state == state_int:
-                noises = np.random.dirichlet(
-                    [0.03] * game.GAME_COLS)
-                probs = [
-                    0.75 * prob + 0.25 * noise
-                    for prob, noise in zip(probs, noises)
-                ]
+                noises = np.random.dirichlet([0.03] * game.GAME_COLS)
+                probs = [0.75 * prob + 0.25 * noise for prob, noise in zip(probs, noises)]
             score = [
                 value + self.c_puct*prob*total_sqrt/(1+count)
-                for value, prob, count in
-                    zip(values_avg, probs, counts)
+                for value, prob, count in zip(values_avg, probs, counts)
             ]
             invalid_actions = set(range(game.GAME_COLS)) - \
                               set(game.possible_moves(cur_state))
@@ -79,8 +74,7 @@ class MCTS:
                 score[invalid] = -np.inf
             action = int(np.argmax(score))
             actions.append(action)
-            cur_state, won = game.move(
-                cur_state, action, cur_player)
+            cur_state, won = game.move(cur_state, action, cur_player)
             if won:
                 # if somebody won the game, the value of the final state is -1 (as it is on opponent's turn)
                 value = -1.0
@@ -95,14 +89,11 @@ class MCTS:
     def is_leaf(self, state_int):
         return state_int not in self.probs
 
-    def search_batch(self, count, batch_size, state_int,
-                     player, net, device="cpu"):
+    def search_batch(self, count, batch_size, state_int, player, net, device="cpu"):
         for _ in range(count):
-            self.search_minibatch(batch_size, state_int,
-                                  player, net, device)
+            self.search_minibatch(batch_size, state_int, player, net, device)
 
-    def search_minibatch(self, count, state_int, player,
-                         net, device="cpu"):
+    def search_minibatch(self, count, state_int, player, net, device="cpu"):
         """
         Perform several MCTS searches.
         """
@@ -119,17 +110,14 @@ class MCTS:
             else:
                 if leaf_state not in planned:
                     planned.add(leaf_state)
-                    leaf_state_lists = game.decode_binary(
-                        leaf_state)
+                    leaf_state_lists = game.decode_binary(leaf_state)
                     expand_states.append(leaf_state_lists)
                     expand_players.append(leaf_player)
-                    expand_queue.append((leaf_state, states,
-                                         actions))
+                    expand_queue.append((leaf_state, states, actions))
 
         # do expansion of nodes
         if expand_queue:
-            batch_v = model.state_lists_to_batch(
-                expand_states, expand_players, device)
+            batch_v = model.state_lists_to_batch(expand_states, expand_players, device)
             logits_v, values_v = net(batch_v)
             probs_v = F.softmax(logits_v, dim=1)
             values = values_v.data.cpu().numpy()[:, 0]
@@ -148,13 +136,11 @@ class MCTS:
         for value, states, actions in backup_queue:
             # leaf state is not stored in states and actions, so the value of the leaf will be the value of the opponent
             cur_value = -value
-            for state_int, action in zip(states[::-1],
-                                         actions[::-1]):
+            for state_int, action in zip(states[::-1], actions[::-1]):
                 self.visit_count[state_int][action] += 1
                 self.value[state_int][action] += cur_value
-                self.value_avg[state_int][action] = \
-                    self.value[state_int][action] / \
-                    self.visit_count[state_int][action]
+                self.value_avg[state_int][action] = self.value[state_int][action] / \
+                                                    self.visit_count[state_int][action]
                 cur_value = -cur_value
 
     def get_policy_value(self, state_int, tau=1):

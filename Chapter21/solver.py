@@ -214,7 +214,7 @@ if __name__ == "__main__":
     assert isinstance(cube_env, cubes.CubeEnv)              # just to help pycharm understand type
 
     net = model.Net(cube_env.encoded_shape, len(cube_env.action_enum)).to(device)
-    net.load_state_dict(torch.load(args.model, map_location=lambda storage, loc: storage))
+    net.load_state_dict(torch.load(args.model, map_location=lambda storage, loc: storage, weights_only=True))
     net.eval()
     log.info("Network loaded from %s", args.model)
     data = []

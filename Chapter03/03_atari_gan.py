@@ -153,8 +153,10 @@ if __name__ == "__main__":
     net_gener = Generator(output_shape=shape).to(device)
 
     objective = nn.BCELoss()
-    gen_optimizer = optim.Adam(params=net_gener.parameters(), lr=LEARNING_RATE, betas=(0.5, 0.999))
-    dis_optimizer = optim.Adam(params=net_discr.parameters(), lr=LEARNING_RATE, betas=(0.5, 0.999))
+    gen_optimizer = optim.Adam(params=net_gener.parameters(), lr=LEARNING_RATE,
+                               betas=(0.5, 0.999))
+    dis_optimizer = optim.Adam(params=net_discr.parameters(), lr=LEARNING_RATE,
+                               betas=(0.5, 0.999))
     writer = SummaryWriter()
 
     gen_losses = []
@@ -202,5 +204,7 @@ if __name__ == "__main__":
             gen_losses = []
             dis_losses = []
         if iter_no % SAVE_IMAGE_EVERY_ITER == 0:
-            writer.add_image("fake", vutils.make_grid(gen_output_v.data[:64], normalize=True), iter_no)
-            writer.add_image("real", vutils.make_grid(batch_v.data[:64], normalize=True), iter_no)
+            img = vutils.make_grid(gen_output_v.data[:64], normalize=True)
+            writer.add_image("fake", img, iter_no)
+            img = vutils.make_grid(batch_v.data[:64], normalize=True)
+            writer.add_image("real", img, iter_no)
